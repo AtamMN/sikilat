@@ -1,0 +1,658 @@
+/**
+ * Global Styles
+ * SIKILAT - Sistem Informasi Laporan Kegiatan Terintegrasi
+ */
+
+@import "tailwindcss";
+
+:root {
+  --background: #f9fafb;
+  --foreground: #111827;
+  --primary: #2563eb;
+  --primary-dark: #1d4ed8;
+  --secondary: #6b7280;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-inter);
+}
+
+/* Base Styles */
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Toast Animation */
+@keyframes slide-in {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes pop-in {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-slide-in {
+  animation: slide-in 0.3s ease-out forwards;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.2s ease-out forwards;
+}
+
+.animate-pop-in {
+  animation: pop-in 0.3s ease-out forwards;
+}
+
+/* Print Styles */
+@media print {
+  @page {
+    size: A4;
+    margin: 20mm 15mm;
+  }
+  
+  body {
+    background: white !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  
+  .no-print,
+  [class*="print:hidden"] {
+    display: none !important;
+  }
+  
+  /* A4 Paper Reset for Print */
+  .a4-paper {
+    width: 100% !important;
+    max-width: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    page-break-inside: avoid;
+  }
+  
+  /* Page Break Controls */
+  .page-break-before {
+    page-break-before: always;
+  }
+  
+  .page-break-after {
+    page-break-after: always;
+  }
+  
+  .avoid-break {
+    page-break-inside: avoid;
+  }
+}
+
+/* A4 Paper Styling for Screen */
+.a4-paper {
+  width: 210mm;
+  min-height: 297mm;
+  padding: 20mm 15mm;
+  font-family: 'Times New Roman', Times, serif;
+  font-size: 12pt;
+  line-height: 1.5;
+  background: white;
+  /* Fix text overflow */
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  word-break: break-word;
+  hyphens: auto;
+}
+
+/* Fix rich text content overflow */
+.a4-paper p,
+.a4-paper div,
+.a4-paper span,
+.a4-paper li {
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  word-break: break-word;
+}
+
+/* Fix &nbsp; entities causing overflow */
+.a4-paper .ql-editor,
+.a4-paper [class*="prose"] {
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+}
+
+/* Rich text content from dangerouslySetInnerHTML */
+.rich-text-content {
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  word-break: break-word;
+  white-space: pre-wrap;
+  max-width: 100%;
+}
+
+.rich-text-content p {
+  margin-bottom: 0.5em;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  word-break: break-word;
+}
+
+.rich-text-content ul,
+.rich-text-content ol {
+  padding-left: 1.5em;
+  margin-bottom: 0.5em;
+}
+
+.rich-text-content li {
+  margin-bottom: 0.25em;
+}
+
+@media screen and (max-width: 850px) {
+  .a4-paper {
+    width: 100%;
+    min-height: auto;
+    padding: 15mm 10mm;
+    font-size: 11pt;
+  }
+}
+
+/* Form Input Focus States */
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  ring: 2px;
+  ring-color: var(--primary);
+}
+
+/* Button Transitions */
+button {
+  transition: all 0.2s ease-in-out;
+}
+
+/* Animation Classes */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* Utility Classes */
+.text-balance {
+  text-wrap: balance;
+}
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-6 {
+  display: -webkit-box;
+  -webkit-line-clamp: 6;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Rich Text Editor Styles - Clean & Eye-friendly */
+.rich-text-editor-wrapper .ql-toolbar {
+  border: none !important;
+  border-bottom: 1px solid #e5e7eb !important;
+  background: linear-gradient(to bottom, #fafbfc, #f5f6f7);
+  padding: 6px 10px !important;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+
+.rich-text-editor-wrapper .ql-toolbar .ql-formats {
+  margin-right: 12px !important;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+/* Separator between groups */
+.rich-text-editor-wrapper .ql-toolbar .ql-formats:not(:last-child)::after {
+  content: '';
+  width: 1px;
+  height: 18px;
+  background: #e0e0e0;
+  margin-left: 10px;
+}
+
+.rich-text-editor-wrapper .ql-toolbar button,
+.rich-text-editor-wrapper .ql-toolbar .ql-picker-label {
+  width: 28px !important;
+  height: 28px !important;
+  padding: 4px !important;
+  border-radius: 6px !important;
+  transition: all 0.15s ease !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  position: relative !important;
+}
+
+/* Tooltip styles */
+.rich-text-editor-wrapper .ql-toolbar button::after,
+.rich-text-editor-wrapper .ql-toolbar .ql-align .ql-picker-label::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1f2937;
+  color: white;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 6px 10px;
+  border-radius: 6px;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s ease;
+  pointer-events: none;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+/* Tooltip arrow */
+.rich-text-editor-wrapper .ql-toolbar button::before {
+  content: '';
+  position: absolute;
+  bottom: calc(100% + 2px);
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: #1f2937;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s ease;
+  pointer-events: none;
+  z-index: 1000;
+}
+
+.rich-text-editor-wrapper .ql-toolbar button:hover::after,
+.rich-text-editor-wrapper .ql-toolbar button:hover::before {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Tooltip content for each button */
+.rich-text-editor-wrapper .ql-toolbar button.ql-bold::after {
+  content: 'Tebal (Ctrl+B)';
+}
+
+.rich-text-editor-wrapper .ql-toolbar button.ql-italic::after {
+  content: 'Miring (Ctrl+I)';
+}
+
+.rich-text-editor-wrapper .ql-toolbar button.ql-underline::after {
+  content: 'Garis Bawah (Ctrl+U)';
+}
+
+.rich-text-editor-wrapper .ql-toolbar button.ql-list[value="ordered"]::after {
+  content: 'Daftar Bernomor';
+}
+
+.rich-text-editor-wrapper .ql-toolbar button.ql-list[value="bullet"]::after {
+  content: 'Daftar Bullet';
+}
+
+.rich-text-editor-wrapper .ql-toolbar button.ql-clean::after {
+  content: 'Hapus Format';
+}
+
+.rich-text-editor-wrapper .ql-toolbar .ql-picker {
+  height: 28px !important;
+}
+
+.rich-text-editor-wrapper .ql-toolbar .ql-picker-label {
+  width: auto !important;
+  padding: 4px 8px !important;
+}
+
+.rich-text-editor-wrapper .ql-toolbar button svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Hover state - subtle */
+.rich-text-editor-wrapper .ql-toolbar button:hover,
+.rich-text-editor-wrapper .ql-toolbar .ql-picker-label:hover {
+  background: #e8eaed !important;
+}
+
+/* Active/Selected state - prominent blue indicator */
+.rich-text-editor-wrapper .ql-toolbar button.ql-active,
+.rich-text-editor-wrapper .ql-toolbar .ql-picker-label.ql-active {
+  background: #dbeafe !important;
+  color: #1d4ed8 !important;
+  box-shadow: inset 0 0 0 1.5px #3b82f6 !important;
+}
+
+.rich-text-editor-wrapper .ql-toolbar button.ql-active .ql-stroke {
+  stroke: #1d4ed8 !important;
+}
+
+.rich-text-editor-wrapper .ql-toolbar button.ql-active .ql-fill {
+  fill: #1d4ed8 !important;
+}
+
+/* Hover on non-active buttons */
+.rich-text-editor-wrapper .ql-toolbar button:not(.ql-active):hover .ql-stroke {
+  stroke: #4b5563 !important;
+}
+
+.rich-text-editor-wrapper .ql-toolbar button:not(.ql-active):hover .ql-fill {
+  fill: #4b5563 !important;
+}
+
+/* Header picker styling */
+.rich-text-editor-wrapper .ql-toolbar .ql-header .ql-picker-label {
+  position: relative !important;
+}
+
+.rich-text-editor-wrapper .ql-toolbar .ql-header .ql-picker-label::before {
+  content: 'Normal';
+  font-size: 12px;
+  color: #6b7280;
+}
+
+/* Header picker tooltip */
+.rich-text-editor-wrapper .ql-toolbar .ql-header .ql-picker-label::after {
+  content: 'Ukuran Heading';
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1f2937;
+  color: white;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 6px 10px;
+  border-radius: 6px;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s ease;
+  pointer-events: none;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.rich-text-editor-wrapper .ql-toolbar .ql-header .ql-picker-label:hover::after {
+  opacity: 1;
+  visibility: visible;
+}
+
+.rich-text-editor-wrapper .ql-toolbar .ql-header .ql-picker-label[data-value="1"]::before {
+  content: 'H1';
+}
+
+.rich-text-editor-wrapper .ql-toolbar .ql-header .ql-picker-label[data-value="2"]::before {
+  content: 'H2';
+}
+
+.rich-text-editor-wrapper .ql-toolbar .ql-header .ql-picker-label[data-value="3"]::before {
+  content: 'H3';
+}
+
+.rich-text-editor-wrapper .ql-toolbar .ql-picker-options {
+  background: white !important;
+  border: 1px solid #e5e7eb !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important;
+  padding: 4px !important;
+}
+
+.rich-text-editor-wrapper .ql-toolbar .ql-picker-item {
+  padding: 6px 12px !important;
+  border-radius: 4px !important;
+}
+
+.rich-text-editor-wrapper .ql-toolbar .ql-picker-item:hover {
+  background: #f3f4f6 !important;
+  color: #1f2937 !important;
+}
+
+/* Align picker styling */
+.rich-text-editor-wrapper .ql-toolbar .ql-align .ql-picker-label {
+  width: 28px !important;
+  padding: 4px !important;
+  position: relative !important;
+}
+
+.rich-text-editor-wrapper .ql-toolbar .ql-align .ql-picker-label svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Align picker - active state when value is selected */
+.rich-text-editor-wrapper .ql-toolbar .ql-align .ql-picker-label.ql-active,
+.rich-text-editor-wrapper .ql-toolbar .ql-align .ql-picker-label[data-value]:not([data-value=""]) {
+  background: #dbeafe !important;
+  box-shadow: inset 0 0 0 1.5px #3b82f6 !important;
+}
+
+.rich-text-editor-wrapper .ql-toolbar .ql-align .ql-picker-label.ql-active .ql-stroke,
+.rich-text-editor-wrapper .ql-toolbar .ql-align .ql-picker-label[data-value]:not([data-value=""]) .ql-stroke {
+  stroke: #1d4ed8 !important;
+}
+
+/* Align picker options - dropdown menu */
+.rich-text-editor-wrapper .ql-toolbar .ql-align .ql-picker-options {
+  min-width: 40px;
+}
+
+.rich-text-editor-wrapper .ql-toolbar .ql-align .ql-picker-item {
+  padding: 6px 8px !important;
+}
+
+.rich-text-editor-wrapper .ql-toolbar .ql-align .ql-picker-item svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* Align picker item selected */
+.rich-text-editor-wrapper .ql-toolbar .ql-align .ql-picker-item.ql-selected {
+  background: #dbeafe !important;
+}
+
+.rich-text-editor-wrapper .ql-toolbar .ql-align .ql-picker-item.ql-selected .ql-stroke {
+  stroke: #1d4ed8 !important;
+}
+
+/* Tooltip for align picker - only on hover */
+.rich-text-editor-wrapper .ql-toolbar .ql-align .ql-picker-label::after {
+  content: 'Perataan Paragraf';
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1f2937;
+  color: white;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 6px 10px;
+  border-radius: 6px;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s ease;
+  pointer-events: none;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.rich-text-editor-wrapper .ql-toolbar .ql-align .ql-picker-label:hover::after {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Container & Editor Area */
+.rich-text-editor-wrapper .ql-container {
+  border: none !important;
+  font-family: inherit;
+  font-size: 14px;
+}
+
+.rich-text-editor-wrapper .ql-editor {
+  min-height: var(--editor-min-height, 150px);
+  padding: 14px 16px;
+  line-height: 1.7;
+  color: #374151;
+}
+
+.rich-text-editor-wrapper .ql-editor.ql-blank::before {
+  color: #9ca3af;
+  font-style: normal;
+  left: 16px;
+  right: 16px;
+}
+
+/* Editor content styles */
+.rich-text-editor-wrapper .ql-editor ul,
+.rich-text-editor-wrapper .ql-editor ol {
+  padding-left: 1.5em;
+}
+
+.rich-text-editor-wrapper .ql-editor h1 {
+  font-size: 1.5em;
+  font-weight: 600;
+  margin-bottom: 0.5em;
+}
+
+.rich-text-editor-wrapper .ql-editor h2 {
+  font-size: 1.25em;
+  font-weight: 600;
+  margin-bottom: 0.5em;
+}
+
+.rich-text-editor-wrapper .ql-editor h3 {
+  font-size: 1.1em;
+  font-weight: 600;
+  margin-bottom: 0.5em;
+}
+
+.rich-text-editor-wrapper .ql-editor p {
+  margin-bottom: 0.5em;
+}
+
+.rich-text-editor-wrapper .ql-editor a {
+  color: #2563eb;
+  text-decoration: underline;
+}
+
+/* Rich Text Content for Display/Print */
+.rich-text-content ul,
+.rich-text-content ol {
+  padding-left: 1.5em;
+  margin: 0.5em 0;
+}
+
+.rich-text-content ul {
+  list-style-type: disc;
+}
+
+.rich-text-content ol {
+  list-style-type: decimal;
+}
+
+.rich-text-content p {
+  margin-bottom: 0.5em;
+}
+
+.rich-text-content h1,
+.rich-text-content h2,
+.rich-text-content h3 {
+  font-weight: 600;
+  margin: 0.5em 0;
+}
+
+.rich-text-content a {
+  color: #2563eb;
+  text-decoration: underline;
+}
