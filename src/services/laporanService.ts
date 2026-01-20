@@ -27,18 +27,60 @@ import {
   serverTimestamp,
   Timestamp
 } from 'firebase/firestore';
-import { uploadImageToRealtimeDb } from '@/lib/realtimeDbImages';
 
 /**
- * Upload base64 image to Firebase Realtime Database
- * Returns the rtdb:// reference or null if failed
+ * Check if running in browser
  */
-const uploadImageToDatabase = async (base64String: string): Promise<string | null> => {
-  if (!base64String || !base64String.startsWith('data:')) {
-    return base64String; // Return as-is if not a base64 data URL
-  }
-  
-  return await uploadImageToRealtimeDb(base64String);
+const isBrowser = (): boolean => {
+  return typeof window !== 'undefined';
+};
+
+/**
+ * Compress image before storing
+ * Resize to max dimension and reduce quality for smaller size
+ */
+const compressImage = (base64: string, maxWidth = 600, quality = 0.5): Promise<string> => {
+  return new Promise((resolve) => {
+    if (!isBrowser()) {
+      resolve(base64);
+      return;
+    }
+
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      let { width, height } = img;
+
+      // Calculate new dimensions
+      if (width > maxWidth) {
+        height = (height * maxWidth) / width;
+        width = maxWidth;
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        resolve(base64);
+        return;
+      }
+
+      ctx.drawImage(img, 0, 0, width, height);
+      
+      // Convert to JPEG for better compression
+      const compressed = canvas.toDataURL('image/jpeg', quality);
+      console.log(`Image compressed: ${Math.round(base64.length / 1024)}KB -> ${Math.round(compressed.length / 1024)}KB`);
+      resolve(compressed);
+    };
+
+    img.onerror = () => {
+      console.warn('Failed to load image for compression');
+      resolve(base64);
+    };
+
+    img.src = base64;
+  });
 };
 
 /**
@@ -51,9 +93,8 @@ interface ProcessImagesResult {
 }
 
 /**
- * Process images in data - upload base64 to Realtime Database and replace with references
- * If upload fails, images will be skipped (not included in Firestore)
- * Returns the processed data and count of failed uploads
+ * Process images in data - compress and store directly in Firestore
+ * No more Realtime Database dependency for faster loading
  */
 const processImagesForFirebase = async (data: Record<string, unknown>): Promise<ProcessImagesResult> => {
   const processed = { ...data };
@@ -68,27 +109,30 @@ const processImagesForFirebase = async (data: Record<string, unknown>): Promise<
       const uraian = uraianList[i];
       if (uraian.gambar && Array.isArray(uraian.gambar)) {
         const gambarList = uraian.gambar as string[];
-        const uploadedRefs: string[] = [];
+        const compressedImages: string[] = [];
         
         for (const gambar of gambarList) {
           if (typeof gambar === 'string' && gambar.startsWith('data:')) {
             totalCount++;
-            // Try to upload base64 to Realtime Database
-            const imageRef = await uploadImageToDatabase(gambar);
-            if (imageRef) {
-              uploadedRefs.push(imageRef);
-            } else {
-              // Upload failed
+            try {
+              // Compress image and store directly (no more RTDB)
+              const compressed = await compressImage(gambar);
+              compressedImages.push(compressed);
+            } catch (error) {
+              console.error('Failed to compress image:', error);
               failedCount++;
             }
-          } else if (typeof gambar === 'string' && (gambar.startsWith('http') || gambar.startsWith('rtdb://'))) {
-            // Already a URL or rtdb reference, keep it
-            uploadedRefs.push(gambar);
+          } else if (typeof gambar === 'string' && gambar.startsWith('http')) {
+            // Already a URL, keep it
+            compressedImages.push(gambar);
+          } else if (typeof gambar === 'string' && gambar.startsWith('rtdb://')) {
+            // Legacy rtdb reference - skip it (will be resolved separately)
+            compressedImages.push(gambar);
           }
         }
         
-        // Store uploaded references (may be empty if all uploads failed)
-        uraian.gambar = uploadedRefs.length > 0 ? uploadedRefs : undefined;
+        // Store compressed images directly
+        uraian.gambar = compressedImages.length > 0 ? compressedImages : undefined;
       }
     }
     

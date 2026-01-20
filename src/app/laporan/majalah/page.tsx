@@ -61,35 +61,64 @@ export default function LaporanMajalahPage() {
     }
   }, [currentLaporan, loadCurrentLaporan]);
 
-  // Resolve images from Realtime Database
+  // Resolve images - new format is base64, legacy is rtdb://
   useEffect(() => {
     const resolveImages = async () => {
-      if (!currentLaporan?.uraianKegiatan?.[0]?.gambar) {
+      if (!currentLaporan?.uraianKegiatan) {
         setResolvedImages([]);
         return;
       }
 
-      const gambarList = currentLaporan.uraianKegiatan[0].gambar;
+      // Collect all images from all uraian kegiatan
+      const allGambar: string[] = [];
+      for (const uraian of currentLaporan.uraianKegiatan) {
+        if (uraian.gambar && uraian.gambar.length > 0) {
+          allGambar.push(...uraian.gambar);
+        }
+      }
+
+      if (allGambar.length === 0) {
+        setResolvedImages([]);
+        return;
+      }
       
-      // Check if any image needs resolving
-      const needsResolving = gambarList.some(img => isRealtimeDbImage(img));
+      // Check if any image needs resolving (legacy rtdb:// references)
+      const needsResolving = allGambar.some(img => isRealtimeDbImage(img));
       if (!needsResolving) {
-        setResolvedImages(gambarList);
+        // No legacy images - just use as is
+        setResolvedImages(allGambar);
         return;
       }
 
       setIsLoadingImages(true);
+      
+      // Set timeout for legacy images
+      const timeoutId = setTimeout(() => {
+        console.warn('Legacy image resolve timeout - skipping rtdb images');
+        setResolvedImages(allGambar.filter(img => !isRealtimeDbImage(img)));
+        setIsLoadingImages(false);
+      }, 5000);
+
       try {
         const resolved = await Promise.all(
-          gambarList.map(async (img) => {
-            const resolvedUrl = await resolveImageUrl(img);
-            return resolvedUrl || '';
+          allGambar.map(async (img) => {
+            if (!isRealtimeDbImage(img)) {
+              return img; // Return base64 or http as-is
+            }
+            try {
+              const resolvedUrl = await resolveImageUrl(img);
+              return resolvedUrl || '';
+            } catch {
+              return '';
+            }
           })
         );
+        clearTimeout(timeoutId);
         setResolvedImages(resolved.filter(url => url !== ''));
       } catch (error) {
         console.error('Failed to resolve images:', error);
-        setResolvedImages([]);
+        clearTimeout(timeoutId);
+        setResolvedImages(allGambar.filter(img => !isRealtimeDbImage(img)));
       } finally {
         setIsLoadingImages(false);
       }

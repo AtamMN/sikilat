@@ -106,7 +106,8 @@ function LaporanContent() {
   const displayLaporan = laporanId ? laporan : currentLaporan;
   const displayLoading = laporanId ? isLoadingById : isLoading;
 
-  // Resolve images from Realtime Database
+  // Resolve images from Realtime Database (legacy support)
+  // New images are stored directly as base64 in Firestore
   useEffect(() => {
     const resolveImages = async () => {
       if (!displayLaporan?.uraianKegiatan) {
@@ -114,27 +115,29 @@ function LaporanContent() {
         return;
       }
 
-      // Check if any image needs resolving
+      // Check if any image needs resolving (legacy rtdb:// references)
       const needsResolving = displayLaporan.uraianKegiatan.some(
         uraian => uraian.gambar?.some(img => isRealtimeDbImage(img))
       );
 
       if (!needsResolving) {
+        // No legacy images - just use as is (new base64 format)
         setResolvedUraian(displayLaporan.uraianKegiatan);
         return;
       }
 
       setIsResolvingImages(true);
       
-      // Set a maximum timeout for the entire resolve process
+      // Set a shorter timeout - skip legacy images quickly if they fail
       const timeoutId = setTimeout(() => {
-        console.warn('Image resolve timeout - showing page without some images');
+        console.warn('Legacy image resolve timeout - skipping rtdb images');
         setResolvedUraian(displayLaporan.uraianKegiatan.map(uraian => ({
           ...uraian,
+          // Keep only non-rtdb images (base64 or http)
           gambar: uraian.gambar?.filter(img => !isRealtimeDbImage(img)) || [],
         })));
         setIsResolvingImages(false);
-      }, 15000); // 15 seconds max
+      }, 5000); // 5 seconds max for legacy images
 
       try {
         const resolved = await Promise.all(
@@ -145,11 +148,16 @@ function LaporanContent() {
 
             const resolvedGambar = await Promise.all(
               uraian.gambar.map(async (img) => {
+                // If it's not an rtdb reference, return as-is
+                if (!isRealtimeDbImage(img)) {
+                  return img;
+                }
+                // Try to resolve legacy rtdb reference
                 try {
                   const resolvedUrl = await resolveImageUrl(img);
                   return resolvedUrl || '';
                 } catch {
-                  console.warn('Failed to resolve image:', img);
+                  console.warn('Failed to resolve legacy image:', img);
                   return '';
                 }
               })
@@ -166,7 +174,11 @@ function LaporanContent() {
       } catch (error) {
         console.error('Failed to resolve images:', error);
         clearTimeout(timeoutId);
-        setResolvedUraian(displayLaporan.uraianKegiatan);
+        // Skip all rtdb images on error
+        setResolvedUraian(displayLaporan.uraianKegiatan.map(uraian => ({
+          ...uraian,
+          gambar: uraian.gambar?.filter(img => !isRealtimeDbImage(img)) || [],
+        })));
       } finally {
         setIsResolvingImages(false);
       }
