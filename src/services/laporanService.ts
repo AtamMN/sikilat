@@ -329,8 +329,8 @@ export const submitLaporan = async (data: LaporanType, existingDraftId?: string)
         updatedAt: new Date().toISOString(),
       };
       
-      // Simpan juga ke localStorage untuk akses cepat
-      saveToLocalStorage(STORAGE_KEYS.LAPORAN_DATA, savedData);
+      // Simpan hanya ID ke localStorage untuk referensi cepat ke Firestore
+      saveToLocalStorage(STORAGE_KEYS.LAPORAN_DATA, { id: docId });
       
       // Generate warning jika ada gambar yang gagal upload
       let warning: string | undefined;
@@ -466,20 +466,46 @@ export const getLaporanById = async (id: string): Promise<ServiceResponse<Lapora
 
 /**
  * Get Current/Latest Laporan
- * Mengambil laporan yang baru saja disimpan (untuk redirect ke halaman template)
+ * Mengambil laporan yang baru saja disimpan dari Firestore
+ * Untuk redirect ke halaman template setelah submit
  */
 export const getCurrentLaporan = async (): Promise<ServiceResponse<LaporanType>> => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const laporan = getFromLocalStorage<LaporanType>(STORAGE_KEYS.LAPORAN_DATA);
+  // Cek localStorage untuk ID laporan yang baru disimpan
+  const savedLaporan = getFromLocalStorage<LaporanType>(STORAGE_KEYS.LAPORAN_DATA);
+  
+  if (savedLaporan?.id && isFirebaseConfigured()) {
+    try {
+      // Ambil data terbaru dari Firestore
+      const docRef = doc(db, 'laporan', savedLaporan.id);
+      const docSnap = await getDoc(docRef);
       
-      if (laporan) {
-        resolve({ success: true, data: laporan });
-      } else {
-        resolve({ success: false, error: 'Tidak ada laporan yang tersimpan' });
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        return {
+          success: true,
+          data: { 
+            id: docSnap.id, 
+            ...data,
+            createdAt: data.createdAt instanceof Timestamp 
+              ? data.createdAt.toDate().toISOString() 
+              : data.createdAt,
+            updatedAt: data.updatedAt instanceof Timestamp 
+              ? data.updatedAt.toDate().toISOString() 
+              : data.updatedAt,
+          } as LaporanType,
+        };
       }
-    }, 300);
-  });
+    } catch (error) {
+      console.error('Firebase error getting current laporan:', error);
+    }
+  }
+  
+  // Fallback ke localStorage jika Firestore gagal
+  if (savedLaporan) {
+    return { success: true, data: savedLaporan };
+  }
+  
+  return { success: false, error: 'Tidak ada laporan yang tersimpan' };
 };
 
 /**
@@ -657,9 +683,8 @@ export const saveDraft = async (data: Partial<LaporanFormInput>): Promise<Servic
         status: 'draft',
       };
       
-      // Also save to localStorage for quick access (dengan firebaseId)
+      // Simpan hanya firebaseId ke localStorage untuk referensi cepat
       saveToLocalStorage(STORAGE_KEYS.DRAFT_DATA, {
-        ...data,
         firebaseId: docId,
         savedAt: new Date().toISOString(),
       });
@@ -694,33 +719,88 @@ export const saveDraft = async (data: Partial<LaporanFormInput>): Promise<Servic
 
 /**
  * Get Draft
- * Mengambil draft laporan yang tersimpan
+ * Mengambil draft laporan dari Firestore
+ * Pertama cek localStorage untuk firebaseId, jika ada ambil dari Firestore
+ * Jika tidak, ambil draft terbaru dari Firestore
  */
-export const getDraft = async (): Promise<ServiceResponse<Partial<LaporanFormInput>>> => {
-  return new Promise((resolve) => {
-    const draft = getFromLocalStorage<Partial<LaporanFormInput>>(STORAGE_KEYS.DRAFT_DATA);
-    if (draft) {
-      resolve({ success: true, data: draft });
-    } else {
-      resolve({ success: false, error: 'Tidak ada draft tersimpan' });
+export const getDraft = async (): Promise<ServiceResponse<Partial<LaporanFormInput> & { firebaseId?: string }>> => {
+  if (isFirebaseConfigured()) {
+    try {
+      // Cek localStorage untuk firebaseId yang sedang diedit
+      const localDraft = getFromLocalStorage<{ firebaseId?: string }>(STORAGE_KEYS.DRAFT_DATA);
+      
+      if (localDraft?.firebaseId) {
+        // Ambil draft spesifik dari Firestore
+        const docRef = doc(db, 'laporan', localDraft.firebaseId);
+        const docSnap = await getDoc(docRef);
+        
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          // Convert Firestore data to form input format
+          const formData = convertFirestoreToFormInput(data, docSnap.id);
+          return { success: true, data: formData };
+        }
+      }
+      
+      // Jika tidak ada firebaseId, return tidak ada draft
+      return { success: false, error: 'Tidak ada draft tersimpan' };
+    } catch (error) {
+      console.error('Firebase error getting draft:', error);
     }
-  });
+  }
+  
+  // Fallback ke localStorage
+  const draft = getFromLocalStorage<Partial<LaporanFormInput>>(STORAGE_KEYS.DRAFT_DATA);
+  if (draft) {
+    return { success: true, data: draft };
+  }
+  return { success: false, error: 'Tidak ada draft tersimpan' };
 };
 
 /**
  * Clear Draft
- * Menghapus draft laporan
+ * Menghapus referensi draft dari localStorage
+ * Tidak menghapus dari Firestore karena data mungkin masih diperlukan
  */
 export const clearDraft = async (): Promise<ServiceResponse<null>> => {
-  return new Promise((resolve) => {
-    try {
+  try {
+    if (isBrowser()) {
       localStorage.removeItem(STORAGE_KEYS.DRAFT_DATA);
-      resolve({ success: true, message: 'Draft berhasil dihapus' });
-    } catch (error) {
-      resolve({ 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error' 
-      });
     }
-  });
+    return { success: true, message: 'Draft berhasil dihapus' };
+  } catch (error) {
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Unknown error' 
+    };
+  }
+};
+
+/**
+ * Helper: Convert Firestore data to form input format
+ */
+const convertFirestoreToFormInput = (
+  data: Record<string, unknown>, 
+  docId: string
+): Partial<LaporanFormInput> & { firebaseId: string } => {
+  const uraian = data.uraianKegiatan as Array<Record<string, unknown>> | undefined;
+  const pelaksana = data.pelaksana as Array<Record<string, unknown>> | undefined;
+  
+  return {
+    firebaseId: docId,
+    namaKegiatan: data.namaKegiatan as string || '',
+    pendahuluan: data.pendahuluan as string || '',
+    waktuMulai: data.waktuMulai as string || '',
+    waktuSelesai: data.waktuSelesai as string || '',
+    lokasi: data.tempatPelaksanaan as string || '',
+    penanggungJawab: pelaksana?.[0]?.nama as string || '',
+    jabatanPenanggungJawab: pelaksana?.[0]?.jabatan as string || '',
+    nipPenanggungJawab: pelaksana?.[0]?.nip as string || '',
+    sumberPendanaan: data.sumberPendanaan as string || '',
+    tanggal: uraian?.[0]?.tanggal as string || '',
+    deskripsi: uraian?.[0]?.deskripsi as string || '',
+    gambarPreview: uraian?.[0]?.gambar as string[] || [],
+    rekomendasi: data.rekomendasi as string || '',
+    ucapanTerimakasih: data.ucapanTerimakasih as string || '',
+  };
 };
