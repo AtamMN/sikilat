@@ -30,6 +30,7 @@ function BuatLaporanContent() {
   const [isLoadingDraft, setIsLoadingDraft] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+  const [toastType, setToastType] = useState<'success' | 'warning'>('success');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingStatus, setEditingStatus] = useState<string | null>(null);
 
@@ -126,19 +127,37 @@ function BuatLaporanContent() {
     };
 
     // Pass the editing ID if we're editing an existing report
-    const success = await submitForm(formData, undefined, editingId || undefined);
+    const result = await submitForm(formData, undefined, editingId || undefined);
     
-    if (success) {
-      router.push('/laporan');
+    if (result.success) {
+      // Jika ada warning (gambar gagal upload), tampilkan popup dulu
+      if (result.warning) {
+        setToastType('warning');
+        setToastMessage(result.warning);
+        setShowToast(true);
+        // Tetap redirect setelah user menutup popup
+        setTimeout(() => {
+          router.push('/laporan');
+        }, 100);
+      } else {
+        router.push('/laporan');
+      }
     }
   };
 
   const handleSaveDraft = async () => {
-    await saveDraftData({
+    const result = await saveDraftData({
       ...formValues,
       gambarPreview: images,
     });
-    setToastMessage('Draft berhasil disimpan!');
+    
+    if (result.warning) {
+      setToastType('warning');
+      setToastMessage(`Draft disimpan, namun ${result.warning}`);
+    } else {
+      setToastType('success');
+      setToastMessage('Draft berhasil disimpan!');
+    }
     setShowToast(true);
   };
 
@@ -155,25 +174,41 @@ function BuatLaporanContent() {
           
           {/* Modal Content */}
           <div className="relative bg-white rounded-2xl shadow-2xl p-8 max-w-sm mx-4 animate-pop-in">
-            {/* Success Icon */}
+            {/* Icon - Success or Warning */}
             <div className="flex justify-center mb-4">
-              <div className="bg-green-100 rounded-full p-4">
-                <div className="bg-green-500 rounded-full p-3">
-                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                  </svg>
+              {toastType === 'success' ? (
+                <div className="bg-green-100 rounded-full p-4">
+                  <div className="bg-green-500 rounded-full p-3">
+                    <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="bg-yellow-100 rounded-full p-4">
+                  <div className="bg-yellow-500 rounded-full p-3">
+                    <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                  </div>
+                </div>
+              )}
             </div>
             
             {/* Message */}
-            <h3 className="text-xl font-bold text-gray-900 text-center mb-2">Berhasil!</h3>
+            <h3 className="text-xl font-bold text-gray-900 text-center mb-2">
+              {toastType === 'success' ? 'Berhasil!' : 'Peringatan'}
+            </h3>
             <p className="text-gray-600 text-center mb-6">{toastMessage}</p>
             
             {/* Button */}
             <button 
               onClick={() => setShowToast(false)}
-              className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-6 rounded-xl transition-colors"
+              className={`w-full font-semibold py-3 px-6 rounded-xl transition-colors text-white ${
+                toastType === 'success' 
+                  ? 'bg-green-500 hover:bg-green-600' 
+                  : 'bg-yellow-500 hover:bg-yellow-600'
+              }`}
             >
               OK
             </button>

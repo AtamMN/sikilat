@@ -9,6 +9,7 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
+import { getDatabase } from 'firebase/database';
 
 /**
  * Firebase Configuration Object
@@ -21,6 +22,7 @@ const firebaseConfig = {
   storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  databaseURL: process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL,
 };
 
 /**
@@ -37,8 +39,11 @@ const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 // Firestore Database
 export const db = getFirestore(app);
 
-// Firebase Storage (untuk upload gambar)
+// Firebase Storage (untuk upload gambar - memerlukan Blaze plan)
 export const storage = getStorage(app);
+
+// Firebase Realtime Database (untuk menyimpan gambar sebagai base64)
+export const realtimeDb = getDatabase(app);
 
 /**
  * Helper function untuk cek apakah Firebase sudah dikonfigurasi

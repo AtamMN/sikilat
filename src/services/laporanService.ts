@@ -13,7 +13,7 @@ import {
   getFromLocalStorage,
   STORAGE_KEYS 
 } from '@/lib/storage';
-import { db, storage, isFirebaseConfigured } from '@/lib/firebase';
+import { db, isFirebaseConfigured } from '@/lib/firebase';
 import { 
   collection, 
   addDoc, 
@@ -27,61 +27,38 @@ import {
   serverTimestamp,
   Timestamp
 } from 'firebase/firestore';
-import { ref, uploadString, getDownloadURL } from 'firebase/storage';
+import { uploadImageToRealtimeDb } from '@/lib/realtimeDbImages';
 
 /**
- * Upload base64 image to Firebase Storage and return download URL
- * Returns null if upload fails (will be handled gracefully)
- * Has a timeout to prevent infinite waiting
- * 
- * NOTE: Firebase Storage requires CORS configuration. Until configured,
- * this function will timeout and return null (images will be skipped).
+ * Upload base64 image to Firebase Realtime Database
+ * Returns the rtdb:// reference or null if failed
  */
-const uploadBase64ToStorage = async (base64String: string, path: string): Promise<string | null> => {
+const uploadImageToDatabase = async (base64String: string): Promise<string | null> => {
   if (!base64String || !base64String.startsWith('data:')) {
     return base64String; // Return as-is if not a base64 data URL
   }
   
-  // TODO: Enable this when Firebase Storage CORS is configured
-  // For now, skip image upload to avoid CORS errors
-  console.warn('Skipping image upload - Firebase Storage CORS not configured yet');
-  return null;
-  
-  /*
-  // Wrap in a timeout promise to prevent infinite waiting
-  const timeoutMs = 5000; // 5 second timeout per image
-  
-  const uploadPromise = async (): Promise<string | null> => {
-    try {
-      const fileName = `${path}/${Date.now()}_${Math.random().toString(36).substr(2, 9)}.jpg`;
-      const storageRef = ref(storage, fileName);
-      const snapshot = await uploadString(storageRef, base64String, 'data_url');
-      const downloadURL = await getDownloadURL(snapshot.ref);
-      return downloadURL;
-    } catch (error) {
-      console.warn('Firebase Storage upload failed:', error);
-      return null;
-    }
-  };
-  
-  const timeoutPromise = new Promise<null>((resolve) => {
-    setTimeout(() => {
-      console.warn('Firebase Storage upload timed out');
-      resolve(null);
-    }, timeoutMs);
-  });
-  
-  // Race between upload and timeout
-  return Promise.race([uploadPromise(), timeoutPromise]);
-  */
+  return await uploadImageToRealtimeDb(base64String);
 };
 
 /**
- * Process images in data - upload base64 to Storage and replace with URLs
- * If Storage upload fails, images will be skipped (not included in Firestore)
+ * Result dari proses upload gambar
  */
-const processImagesForFirebase = async (data: Record<string, unknown>): Promise<Record<string, unknown>> => {
+interface ProcessImagesResult {
+  data: Record<string, unknown>;
+  failedCount: number;
+  totalCount: number;
+}
+
+/**
+ * Process images in data - upload base64 to Realtime Database and replace with references
+ * If upload fails, images will be skipped (not included in Firestore)
+ * Returns the processed data and count of failed uploads
+ */
+const processImagesForFirebase = async (data: Record<string, unknown>): Promise<ProcessImagesResult> => {
   const processed = { ...data };
+  let failedCount = 0;
+  let totalCount = 0;
   
   // Process uraianKegiatan gambar
   if (processed.uraianKegiatan && Array.isArray(processed.uraianKegiatan)) {
@@ -91,31 +68,34 @@ const processImagesForFirebase = async (data: Record<string, unknown>): Promise<
       const uraian = uraianList[i];
       if (uraian.gambar && Array.isArray(uraian.gambar)) {
         const gambarList = uraian.gambar as string[];
-        const uploadedUrls: string[] = [];
+        const uploadedRefs: string[] = [];
         
         for (const gambar of gambarList) {
           if (typeof gambar === 'string' && gambar.startsWith('data:')) {
-            // Try to upload base64 to Storage
-            const url = await uploadBase64ToStorage(gambar, 'laporan-images');
-            if (url) {
-              uploadedUrls.push(url);
+            totalCount++;
+            // Try to upload base64 to Realtime Database
+            const imageRef = await uploadImageToDatabase(gambar);
+            if (imageRef) {
+              uploadedRefs.push(imageRef);
+            } else {
+              // Upload failed
+              failedCount++;
             }
-            // If upload fails (url is null), skip this image
-          } else if (typeof gambar === 'string' && gambar.startsWith('http')) {
-            // Already a URL, keep it
-            uploadedUrls.push(gambar);
+          } else if (typeof gambar === 'string' && (gambar.startsWith('http') || gambar.startsWith('rtdb://'))) {
+            // Already a URL or rtdb reference, keep it
+            uploadedRefs.push(gambar);
           }
         }
         
-        // Store uploaded URLs (may be empty if all uploads failed)
-        uraian.gambar = uploadedUrls.length > 0 ? uploadedUrls : undefined;
+        // Store uploaded references (may be empty if all uploads failed)
+        uraian.gambar = uploadedRefs.length > 0 ? uploadedRefs : undefined;
       }
     }
     
     processed.uraianKegiatan = uraianList;
   }
   
-  return processed;
+  return { data: processed, failedCount, totalCount };
 };
 
 /**
@@ -266,8 +246,8 @@ export const submitLaporan = async (data: LaporanType, existingDraftId?: string)
       // Hapus id karena Firestore akan generate sendiri
       const { id, ...dataWithoutId } = data;
       
-      // Upload gambar ke Firebase Storage dan dapatkan URL
-      const dataWithUploadedImages = await processImagesForFirebase(dataWithoutId as Record<string, unknown>);
+      // Upload gambar ke Imgur dan dapatkan URL
+      const { data: dataWithUploadedImages, failedCount, totalCount } = await processImagesForFirebase(dataWithoutId as Record<string, unknown>);
       
       // Sanitize data untuk Firebase
       const sanitizedData = sanitizeForFirebase(dataWithUploadedImages) as Record<string, unknown>;
@@ -308,10 +288,17 @@ export const submitLaporan = async (data: LaporanType, existingDraftId?: string)
       // Simpan juga ke localStorage untuk akses cepat
       saveToLocalStorage(STORAGE_KEYS.LAPORAN_DATA, savedData);
       
+      // Generate warning jika ada gambar yang gagal upload
+      let warning: string | undefined;
+      if (failedCount > 0) {
+        warning = `${failedCount} dari ${totalCount} gambar gagal diupload. Pastikan koneksi internet stabil dan coba lagi.`;
+      }
+      
       return {
         success: true,
         data: savedData,
         message: 'Laporan berhasil disimpan ke database',
+        warning,
       };
     } catch (error) {
       console.error('Firebase error:', error);
@@ -589,8 +576,8 @@ export const saveDraft = async (data: Partial<LaporanFormInput>): Promise<Servic
     try {
       const { id, ...dataWithoutId } = laporanData;
       
-      // Upload gambar ke Firebase Storage dan dapatkan URL
-      const dataWithUploadedImages = await processImagesForFirebase(dataWithoutId as Record<string, unknown>);
+      // Upload gambar ke Imgur dan dapatkan URL
+      const { data: dataWithUploadedImages, failedCount, totalCount } = await processImagesForFirebase(dataWithoutId as Record<string, unknown>);
       
       // Sanitize data untuk Firebase
       const sanitizedData = sanitizeForFirebase(dataWithUploadedImages) as Record<string, unknown>;
@@ -633,7 +620,13 @@ export const saveDraft = async (data: Partial<LaporanFormInput>): Promise<Servic
         savedAt: new Date().toISOString(),
       });
       
-      return { success: true, data: savedData, message: 'Draft berhasil disimpan ke database' };
+      // Generate warning jika ada gambar yang gagal upload
+      let warning: string | undefined;
+      if (failedCount > 0) {
+        warning = `${failedCount} dari ${totalCount} gambar gagal diupload. Pastikan koneksi internet stabil dan coba lagi.`;
+      }
+      
+      return { success: true, data: savedData, message: 'Draft berhasil disimpan ke database', warning };
     } catch (error) {
       console.error('Firebase error saving draft:', error);
       // Fallback to localStorage

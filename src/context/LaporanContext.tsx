@@ -21,6 +21,11 @@ import {
 import { uploadMultipleImages } from '@/services/imageService';
 import { getFromLocalStorage, STORAGE_KEYS } from '@/lib/storage';
 
+interface SubmitResult {
+  success: boolean;
+  warning?: string;
+}
+
 interface LaporanContextType {
   // State
   currentLaporan: LaporanType | null;
@@ -29,10 +34,10 @@ interface LaporanContextType {
   isDraftSaved: boolean;
   
   // Actions
-  submitForm: (data: LaporanFormInput, images?: File[], editingId?: string) => Promise<boolean>;
+  submitForm: (data: LaporanFormInput, images?: File[], editingId?: string) => Promise<SubmitResult>;
   loadCurrentLaporan: () => Promise<void>;
   clearCurrentLaporan: () => void;
-  saveDraftData: (data: Partial<LaporanFormInput>) => Promise<void>;
+  saveDraftData: (data: Partial<LaporanFormInput>) => Promise<{ success: boolean; warning?: string }>;
   loadDraftData: () => Promise<Partial<LaporanFormInput> | null>;
   clearDraftData: () => Promise<void>;
   setError: (error: string | null) => void;
@@ -49,7 +54,7 @@ export const LaporanProvider: React.FC<{ children: React.ReactNode }> = ({ child
   /**
    * Submit form data dan simpan sebagai laporan
    */
-  const submitForm = useCallback(async (data: LaporanFormInput, images?: File[], editingId?: string): Promise<boolean> => {
+  const submitForm = useCallback(async (data: LaporanFormInput, images?: File[], editingId?: string): Promise<SubmitResult> => {
     setIsLoading(true);
     setError(null);
 
@@ -90,15 +95,15 @@ export const LaporanProvider: React.FC<{ children: React.ReactNode }> = ({ child
         // Clear draft setelah berhasil submit
         await clearDraft();
         setIsDraftSaved(false);
-        return true;
+        return { success: true, warning: result.warning };
       } else {
         setError(result.error || 'Gagal menyimpan laporan');
-        return false;
+        return { success: false };
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Terjadi kesalahan';
       setError(errorMessage);
-      return false;
+      return { success: false };
     } finally {
       setIsLoading(false);
     }
@@ -135,11 +140,13 @@ export const LaporanProvider: React.FC<{ children: React.ReactNode }> = ({ child
   /**
    * Save draft data
    */
-  const saveDraftData = useCallback(async (data: Partial<LaporanFormInput>) => {
+  const saveDraftData = useCallback(async (data: Partial<LaporanFormInput>): Promise<{ success: boolean; warning?: string }> => {
     const result = await saveDraft(data);
     if (result.success) {
       setIsDraftSaved(true);
+      return { success: true, warning: result.warning };
     }
+    return { success: false };
   }, []);
 
   /**

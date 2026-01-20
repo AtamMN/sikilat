@@ -11,6 +11,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useLaporan } from '@/context/LaporanContext';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import { resolveImageUrl, isRealtimeDbImage } from '@/lib/realtimeDbImages';
 
 // Helper untuk format tanggal
 const formatTanggal = (dateString: string): string => {
@@ -51,12 +52,51 @@ export default function LaporanMajalahPage() {
   const router = useRouter();
   const { currentLaporan, isLoading, loadCurrentLaporan, error } = useLaporan();
   const [isPrinting, setIsPrinting] = useState(false);
+  const [resolvedImages, setResolvedImages] = useState<string[]>([]);
+  const [isLoadingImages, setIsLoadingImages] = useState(false);
 
   useEffect(() => {
     if (!currentLaporan) {
       loadCurrentLaporan();
     }
   }, [currentLaporan, loadCurrentLaporan]);
+
+  // Resolve images from Realtime Database
+  useEffect(() => {
+    const resolveImages = async () => {
+      if (!currentLaporan?.uraianKegiatan?.[0]?.gambar) {
+        setResolvedImages([]);
+        return;
+      }
+
+      const gambarList = currentLaporan.uraianKegiatan[0].gambar;
+      
+      // Check if any image needs resolving
+      const needsResolving = gambarList.some(img => isRealtimeDbImage(img));
+      if (!needsResolving) {
+        setResolvedImages(gambarList);
+        return;
+      }
+
+      setIsLoadingImages(true);
+      try {
+        const resolved = await Promise.all(
+          gambarList.map(async (img) => {
+            const resolvedUrl = await resolveImageUrl(img);
+            return resolvedUrl || '';
+          })
+        );
+        setResolvedImages(resolved.filter(url => url !== ''));
+      } catch (error) {
+        console.error('Failed to resolve images:', error);
+        setResolvedImages([]);
+      } finally {
+        setIsLoadingImages(false);
+      }
+    };
+
+    resolveImages();
+  }, [currentLaporan]);
 
   const handlePrint = () => {
     setIsPrinting(true);
@@ -108,9 +148,19 @@ export default function LaporanMajalahPage() {
     );
   }
 
-  const gambarList = currentLaporan.uraianKegiatan?.[0]?.gambar || [];
+  // Use resolved images instead of raw gambarList
+  const gambarList = resolvedImages;
   const heroImage = gambarList[0];
   const otherImages = gambarList.slice(1);
+
+  // Show loading state while images are being resolved
+  if (isLoadingImages) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-900">
+        <LoadingSpinner size="lg" text="Memuat gambar..." />
+      </div>
+    );
+  }
 
   return (
     <>
@@ -160,7 +210,7 @@ export default function LaporanMajalahPage() {
           </div>
 
           {/* Hero Image */}
-          {heroImage && (
+          {heroImage && !heroImage.startsWith('rtdb://') && (
             <div className="absolute inset-0">
               <img 
                 src={heroImage} 
@@ -297,7 +347,7 @@ export default function LaporanMajalahPage() {
 
                 {/* Sidebar with images */}
                 <div className="space-y-4">
-                  {otherImages.slice(0, 2).map((img, index) => (
+                  {otherImages.slice(0, 2).filter(img => img && !img.startsWith('rtdb://')).map((img, index) => (
                     <div key={index} className="relative group overflow-hidden rounded-xl shadow-lg">
                       <img 
                         src={img} 
@@ -329,9 +379,9 @@ export default function LaporanMajalahPage() {
               {/* Left - Gallery */}
               <div className="overflow-hidden">
                 <h3 className="text-2xl font-bold text-gray-900 mb-4">📸 Galeri Dokumentasi</h3>
-                {gambarList.length > 0 ? (
+                {gambarList.filter(img => img && !img.startsWith('rtdb://')).length > 0 ? (
                   <div className="grid grid-cols-2 gap-3">
-                    {gambarList.slice(0, 4).map((img, index) => (
+                    {gambarList.filter(img => img && !img.startsWith('rtdb://')).slice(0, 4).map((img, index) => (
                       <div key={index} className="relative group overflow-hidden rounded-lg shadow-md aspect-square">
                         <img 
                           src={img} 

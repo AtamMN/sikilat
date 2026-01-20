@@ -12,8 +12,9 @@ import React, { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useLaporan } from '@/context/LaporanContext';
 import { getLaporanById } from '@/services/laporanService';
-import { LaporanType } from '@/types/laporan';
+import { LaporanType, UraianHari } from '@/types/laporan';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import { resolveImageUrl, isRealtimeDbImage } from '@/lib/realtimeDbImages';
 
 // Helper untuk format tanggal
 const formatTanggal = (dateString: string): string => {
@@ -73,6 +74,8 @@ function LaporanContent() {
   const [isPrinting, setIsPrinting] = useState(false);
   const [laporan, setLaporan] = useState<LaporanType | null>(null);
   const [isLoadingById, setIsLoadingById] = useState(false);
+  const [resolvedUraian, setResolvedUraian] = useState<UraianHari[] | null>(null);
+  const [isResolvingImages, setIsResolvingImages] = useState(false);
 
   // Load laporan by ID from URL or from context
   useEffect(() => {
@@ -103,6 +106,57 @@ function LaporanContent() {
   const displayLaporan = laporanId ? laporan : currentLaporan;
   const displayLoading = laporanId ? isLoadingById : isLoading;
 
+  // Resolve images from Realtime Database
+  useEffect(() => {
+    const resolveImages = async () => {
+      if (!displayLaporan?.uraianKegiatan) {
+        setResolvedUraian(null);
+        return;
+      }
+
+      // Check if any image needs resolving
+      const needsResolving = displayLaporan.uraianKegiatan.some(
+        uraian => uraian.gambar?.some(img => isRealtimeDbImage(img))
+      );
+
+      if (!needsResolving) {
+        setResolvedUraian(displayLaporan.uraianKegiatan);
+        return;
+      }
+
+      setIsResolvingImages(true);
+      try {
+        const resolved = await Promise.all(
+          displayLaporan.uraianKegiatan.map(async (uraian) => {
+            if (!uraian.gambar || uraian.gambar.length === 0) {
+              return uraian;
+            }
+
+            const resolvedGambar = await Promise.all(
+              uraian.gambar.map(async (img) => {
+                const resolvedUrl = await resolveImageUrl(img);
+                return resolvedUrl || '';
+              })
+            );
+
+            return {
+              ...uraian,
+              gambar: resolvedGambar.filter(url => url !== ''),
+            };
+          })
+        );
+        setResolvedUraian(resolved);
+      } catch (error) {
+        console.error('Failed to resolve images:', error);
+        setResolvedUraian(displayLaporan.uraianKegiatan);
+      } finally {
+        setIsResolvingImages(false);
+      }
+    };
+
+    resolveImages();
+  }, [displayLaporan]);
+
   const handlePrint = () => {
     setIsPrinting(true);
     setTimeout(() => {
@@ -123,6 +177,14 @@ function LaporanContent() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <LoadingSpinner size="lg" text="Memuat laporan..." />
+      </div>
+    );
+  }
+
+  if (isResolvingImages) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <LoadingSpinner size="lg" text="Memuat gambar..." />
       </div>
     );
   }
@@ -294,7 +356,7 @@ function LaporanContent() {
           <section className="mb-6">
             <h3 className="text-base font-bold mb-4">BAB II. URAIAN KEGIATAN</h3>
             
-            {displayLaporan.uraianKegiatan?.map((uraian, index) => (
+            {(resolvedUraian || displayLaporan.uraianKegiatan)?.map((uraian, index) => (
               <div key={index} className="mb-4">
                 <h4 className="font-semibold mb-2">
                   Hari ke-{uraian.hari} ({formatTanggalSingkat(uraian.tanggal)})
@@ -311,11 +373,24 @@ function LaporanContent() {
                     <div className="grid grid-cols-2 gap-4 pl-4">
                       {uraian.gambar.map((img, imgIndex) => (
                         <figure key={imgIndex} className="text-center">
-                          <img 
-                            src={img} 
-                            alt={`Dokumentasi ${imgIndex + 1}`}
-                            className="w-full h-48 object-cover rounded border"
-                          />
+                          {/* Hanya render img jika bukan rtdb:// URL */}
+                          {img && !img.startsWith('rtdb://') ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img 
+                              src={img} 
+                              alt={`Dokumentasi ${imgIndex + 1}`}
+                              className="w-full h-48 object-cover rounded border"
+                            />
+                          ) : (
+                            <div className="w-full h-48 bg-gray-100 rounded border flex items-center justify-center">
+                              <div className="text-center text-gray-400">
+                                <svg className="w-8 h-8 mx-auto animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                </svg>
+                                <p className="text-xs mt-2">Memuat...</p>
+                              </div>
+                            </div>
+                          )}
                           <figcaption className="text-xs text-gray-600 mt-1">
                             Gambar {imgIndex + 1}
                           </figcaption>

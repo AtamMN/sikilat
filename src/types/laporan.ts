@@ -98,6 +98,7 @@ export interface ServiceResponse<T> {
   data?: T;
   error?: string;
   message?: string;
+  warning?: string; // Warning message (e.g., some images failed to upload)
 }
 
 /**
