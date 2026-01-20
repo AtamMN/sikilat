@@ -65,6 +65,79 @@ const compressImage = (base64: string, maxWidth = 800, quality = 0.6): Promise<s
 };
 
 /**
+ * Local Storage Cache for images
+ */
+const IMAGE_CACHE_PREFIX = 'sikilat_img_';
+
+/**
+ * Get cached image from localStorage
+ */
+const getCachedImage = (key: string): string | null => {
+  if (!isBrowser()) return null;
+  
+  try {
+    const cacheKey = IMAGE_CACHE_PREFIX + key.replace('rtdb://', '');
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) {
+      console.log('Image loaded from cache:', key);
+      return cached;
+    }
+    return null;
+  } catch (error) {
+    console.warn('Failed to get cached image:', error);
+    return null;
+  }
+};
+
+/**
+ * Clear old image caches to free up space
+ */
+const clearOldImageCache = (): void => {
+  if (!isBrowser()) return;
+  
+  try {
+    const keysToRemove: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key?.startsWith(IMAGE_CACHE_PREFIX)) {
+        keysToRemove.push(key);
+      }
+    }
+    // Remove half of the cached images
+    const removeCount = Math.ceil(keysToRemove.length / 2);
+    for (let i = 0; i < removeCount; i++) {
+      localStorage.removeItem(keysToRemove[i]);
+    }
+    console.log(`Cleared ${removeCount} old cached images`);
+  } catch (error) {
+    console.warn('Failed to clear old cache:', error);
+  }
+};
+
+/**
+ * Save image to localStorage cache
+ */
+const setCachedImage = (key: string, data: string): void => {
+  if (!isBrowser()) return;
+  
+  try {
+    const cacheKey = IMAGE_CACHE_PREFIX + key.replace('rtdb://', '');
+    localStorage.setItem(cacheKey, data);
+    console.log('Image cached locally:', key);
+  } catch (error) {
+    // localStorage might be full, try to clear old caches
+    console.warn('Failed to cache image, trying to clear old cache:', error);
+    clearOldImageCache();
+    try {
+      const cacheKey = IMAGE_CACHE_PREFIX + key.replace('rtdb://', '');
+      localStorage.setItem(cacheKey, data);
+    } catch {
+      console.warn('Still failed to cache image after clearing');
+    }
+  }
+};
+
+/**
  * Upload single image to Realtime Database
  * Returns the database reference path or null if failed
  */
@@ -101,8 +174,12 @@ export const uploadImageToRealtimeDb = async (base64Image: string): Promise<stri
     const imageKey = newImageRef.key;
     console.log('Realtime DB upload success, key:', imageKey);
     
+    // Cache immediately after upload for faster retrieval later
+    const rtdbUrl = `rtdb://${imageKey}`;
+    setCachedImage(rtdbUrl, compressed);
+    
     // Return a special URL format that we can parse later
-    return `rtdb://${imageKey}`;
+    return rtdbUrl;
   } catch (error) {
     console.error('Realtime DB upload error:', error);
     return null;
@@ -137,79 +214,6 @@ export const getImageFromRealtimeDb = async (imageKey: string): Promise<string |
  */
 export const isRealtimeDbImage = (url: string): boolean => {
   return url?.startsWith('rtdb://');
-};
-
-/**
- * Local Storage Cache for images
- */
-const IMAGE_CACHE_PREFIX = 'sikilat_img_';
-
-/**
- * Get cached image from localStorage
- */
-const getCachedImage = (key: string): string | null => {
-  if (!isBrowser()) return null;
-  
-  try {
-    const cacheKey = IMAGE_CACHE_PREFIX + key.replace('rtdb://', '');
-    const cached = localStorage.getItem(cacheKey);
-    if (cached) {
-      console.log('Image loaded from cache:', key);
-      return cached;
-    }
-    return null;
-  } catch (error) {
-    console.warn('Failed to get cached image:', error);
-    return null;
-  }
-};
-
-/**
- * Save image to localStorage cache
- */
-const setCachedImage = (key: string, data: string): void => {
-  if (!isBrowser()) return;
-  
-  try {
-    const cacheKey = IMAGE_CACHE_PREFIX + key.replace('rtdb://', '');
-    localStorage.setItem(cacheKey, data);
-    console.log('Image cached locally:', key);
-  } catch (error) {
-    // localStorage might be full, try to clear old caches
-    console.warn('Failed to cache image, trying to clear old cache:', error);
-    clearOldImageCache();
-    try {
-      const cacheKey = IMAGE_CACHE_PREFIX + key.replace('rtdb://', '');
-      localStorage.setItem(cacheKey, data);
-    } catch {
-      console.warn('Still failed to cache image after clearing');
-    }
-  }
-};
-
-/**
- * Clear old image caches to free up space
- */
-const clearOldImageCache = (): void => {
-  if (!isBrowser()) return;
-  
-  try {
-    const keysToRemove: string[] = [];
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key?.startsWith(IMAGE_CACHE_PREFIX)) {
-        keysToRemove.push(key);
-      }
-    }
-    // Remove half of the cached images
-    const removeCount = Math.ceil(keysToRemove.length / 2);
-    for (let i = 0; i < removeCount; i++) {
-      localStorage.removeItem(keysToRemove[i]);
-    }
-    console.log(`Cleared ${removeCount} old cached images`);
-  } catch (error) {
-    console.warn('Failed to clear old cache:', error);
-  }
 };
 
 /**
