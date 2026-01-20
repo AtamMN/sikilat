@@ -125,6 +125,17 @@ function LaporanContent() {
       }
 
       setIsResolvingImages(true);
+      
+      // Set a maximum timeout for the entire resolve process
+      const timeoutId = setTimeout(() => {
+        console.warn('Image resolve timeout - showing page without some images');
+        setResolvedUraian(displayLaporan.uraianKegiatan.map(uraian => ({
+          ...uraian,
+          gambar: uraian.gambar?.filter(img => !isRealtimeDbImage(img)) || [],
+        })));
+        setIsResolvingImages(false);
+      }, 15000); // 15 seconds max
+
       try {
         const resolved = await Promise.all(
           displayLaporan.uraianKegiatan.map(async (uraian) => {
@@ -134,8 +145,13 @@ function LaporanContent() {
 
             const resolvedGambar = await Promise.all(
               uraian.gambar.map(async (img) => {
-                const resolvedUrl = await resolveImageUrl(img);
-                return resolvedUrl || '';
+                try {
+                  const resolvedUrl = await resolveImageUrl(img);
+                  return resolvedUrl || '';
+                } catch {
+                  console.warn('Failed to resolve image:', img);
+                  return '';
+                }
               })
             );
 
@@ -145,9 +161,11 @@ function LaporanContent() {
             };
           })
         );
+        clearTimeout(timeoutId);
         setResolvedUraian(resolved);
       } catch (error) {
         console.error('Failed to resolve images:', error);
+        clearTimeout(timeoutId);
         setResolvedUraian(displayLaporan.uraianKegiatan);
       } finally {
         setIsResolvingImages(false);

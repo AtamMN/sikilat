@@ -187,22 +187,30 @@ export const uploadImageToRealtimeDb = async (base64Image: string): Promise<stri
 };
 
 /**
- * Get image from Realtime Database by key
+ * Get image from Realtime Database by key with timeout
  */
-export const getImageFromRealtimeDb = async (imageKey: string): Promise<string | null> => {
+export const getImageFromRealtimeDb = async (imageKey: string, timeoutMs = 10000): Promise<string | null> => {
   try {
     // Remove rtdb:// prefix if present
     const key = imageKey.replace('rtdb://', '');
     
     const imageRef = ref(realtimeDb, `images/${key}`);
-    const snapshot = await get(imageRef);
     
-    if (snapshot.exists()) {
-      const data = snapshot.val();
-      return data.data || null;
-    }
+    // Add timeout to prevent hanging
+    const timeoutPromise = new Promise<null>((_, reject) => {
+      setTimeout(() => reject(new Error('Timeout fetching image')), timeoutMs);
+    });
     
-    return null;
+    const fetchPromise = get(imageRef).then(snapshot => {
+      if (snapshot.exists()) {
+        const data = snapshot.val();
+        return data.data || null;
+      }
+      return null;
+    });
+    
+    const result = await Promise.race([fetchPromise, timeoutPromise]);
+    return result;
   } catch (error) {
     console.error('Failed to get image from Realtime DB:', error);
     return null;
