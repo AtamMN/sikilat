@@ -70,10 +70,11 @@ function LaporanContent() {
   const searchParams = useSearchParams();
   const laporanId = searchParams.get('id');
   
-  const { currentLaporan, isLoading, loadCurrentLaporan, error } = useLaporan();
+  const { currentLaporan, isLoading, loadCurrentLaporan } = useLaporan();
   const [isPrinting, setIsPrinting] = useState(false);
   const [laporan, setLaporan] = useState<LaporanType | null>(null);
   const [isLoadingById, setIsLoadingById] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [resolvedUraian, setResolvedUraian] = useState<UraianHari[] | null>(null);
   const [isResolvingImages, setIsResolvingImages] = useState(false);
 
@@ -81,20 +82,24 @@ function LaporanContent() {
   useEffect(() => {
     const loadLaporan = async () => {
       if (laporanId) {
-        // Load by ID from URL
+        // Load by ID from URL - langsung dari Firestore
         setIsLoadingById(true);
+        setLoadError(null);
         try {
           const response = await getLaporanById(laporanId);
           if (response.success && response.data) {
             setLaporan(response.data);
+          } else {
+            setLoadError(response.error || 'Laporan tidak ditemukan');
           }
         } catch (err) {
           console.error('Error loading laporan:', err);
+          setLoadError('Gagal memuat laporan');
         } finally {
           setIsLoadingById(false);
         }
       } else if (!currentLaporan) {
-        // Load from context
+        // Load from context (untuk redirect setelah submit)
         loadCurrentLaporan();
       }
     };
@@ -219,7 +224,7 @@ function LaporanContent() {
     );
   }
 
-  if (error || !displayLaporan) {
+  if (loadError || !displayLaporan) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
         <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full text-center">
@@ -232,7 +237,7 @@ function LaporanContent() {
             Laporan Tidak Ditemukan
           </h2>
           <p className="text-gray-600 mb-6">
-            {error || 'Silakan buat laporan baru terlebih dahulu.'}
+            {loadError || 'Silakan buat laporan baru terlebih dahulu.'}
           </p>
           <button
             onClick={handleNewLaporan}

@@ -118,9 +118,8 @@ export const LaporanProvider: React.FC<{ children: React.ReactNode }> = ({ child
       const result = await getCurrentLaporan();
       if (result.success && result.data) {
         setCurrentLaporan(result.data);
-      } else {
-        setError(result.error || 'Laporan tidak ditemukan');
       }
+      // Tidak perlu set error jika tidak ada laporan - ini normal untuk user baru
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Terjadi kesalahan';
       setError(errorMessage);
