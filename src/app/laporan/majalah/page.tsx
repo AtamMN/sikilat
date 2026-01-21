@@ -7,9 +7,11 @@
 
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useEffect, useState, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useLaporan } from '@/context/LaporanContext';
+import { getLaporanById } from '@/services/laporanService';
+import { LaporanType } from '@/types/laporan';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { resolveImageUrl, isRealtimeDbImage } from '@/lib/realtimeDbImages';
 
@@ -49,29 +51,73 @@ const formatBulanTahun = (dateString: string): string => {
 };
 
 export default function LaporanMajalahPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gray-900">
+        <LoadingSpinner size="lg" text="Memuat laporan..." />
+      </div>
+    }>
+      <MajalahContent />
+    </Suspense>
+  );
+}
+
+function MajalahContent() {
   const router = useRouter();
-  const { currentLaporan, isLoading, loadCurrentLaporan, error } = useLaporan();
+  const searchParams = useSearchParams();
+  const laporanId = searchParams.get('id');
+  
+  const { currentLaporan, isLoading, loadCurrentLaporan } = useLaporan();
+  const [laporan, setLaporan] = useState<LaporanType | null>(null);
+  const [isLoadingById, setIsLoadingById] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [isPrinting, setIsPrinting] = useState(false);
   const [resolvedImages, setResolvedImages] = useState<string[]>([]);
   const [isLoadingImages, setIsLoadingImages] = useState(false);
 
+  // Load laporan by ID from URL or from context
   useEffect(() => {
-    if (!currentLaporan) {
-      loadCurrentLaporan();
-    }
-  }, [currentLaporan, loadCurrentLaporan]);
+    const loadLaporan = async () => {
+      if (laporanId) {
+        // Load by ID from URL - langsung dari Firestore
+        setIsLoadingById(true);
+        setLoadError(null);
+        try {
+          const response = await getLaporanById(laporanId);
+          if (response.success && response.data) {
+            setLaporan(response.data);
+          } else {
+            setLoadError(response.error || 'Laporan tidak ditemukan');
+          }
+        } catch (err) {
+          console.error('Error loading laporan:', err);
+          setLoadError('Gagal memuat laporan');
+        } finally {
+          setIsLoadingById(false);
+        }
+      } else if (!currentLaporan) {
+        loadCurrentLaporan();
+      }
+    };
+    
+    loadLaporan();
+  }, [laporanId, currentLaporan, loadCurrentLaporan]);
+
+  // Use laporan from URL or from context
+  const displayLaporan = laporanId ? laporan : currentLaporan;
+  const displayLoading = laporanId ? isLoadingById : isLoading;
 
   // Resolve images - new format is base64, legacy is rtdb://
   useEffect(() => {
     const resolveImages = async () => {
-      if (!currentLaporan?.uraianKegiatan) {
+      if (!displayLaporan?.uraianKegiatan) {
         setResolvedImages([]);
         return;
       }
 
       // Collect all images from all uraian kegiatan
       const allGambar: string[] = [];
-      for (const uraian of currentLaporan.uraianKegiatan) {
+      for (const uraian of displayLaporan.uraianKegiatan) {
         if (uraian.gambar && uraian.gambar.length > 0) {
           allGambar.push(...uraian.gambar);
         }
@@ -125,7 +171,7 @@ export default function LaporanMajalahPage() {
     };
 
     resolveImages();
-  }, [currentLaporan]);
+  }, [displayLaporan]);
 
   const handlePrint = () => {
     setIsPrinting(true);
@@ -143,7 +189,7 @@ export default function LaporanMajalahPage() {
     router.push('/');
   };
 
-  if (isLoading) {
+  if (displayLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-900">
         <LoadingSpinner size="lg" text="Memuat laporan..." />
@@ -151,7 +197,7 @@ export default function LaporanMajalahPage() {
     );
   }
 
-  if (error || !currentLaporan) {
+  if (loadError || !displayLaporan) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-900 p-4">
         <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full text-center">
@@ -164,7 +210,7 @@ export default function LaporanMajalahPage() {
             Laporan Tidak Ditemukan
           </h2>
           <p className="text-gray-600 mb-6">
-            {error || 'Silakan buat laporan baru terlebih dahulu.'}
+            {loadError || 'Silakan buat laporan baru terlebih dahulu.'}
           </p>
           <button
             onClick={handleBackToForm}
@@ -262,21 +308,21 @@ export default function LaporanMajalahPage() {
               </div>
               <div className="text-right">
                 <p className="text-sm opacity-80">Edisi</p>
-                <p className="text-2xl font-bold">{formatBulanTahun(currentLaporan.waktuMulai)}</p>
+                <p className="text-2xl font-bold">{formatBulanTahun(displayLaporan.waktuMulai)}</p>
               </div>
             </div>
 
             {/* Title */}
             <div className="flex-1 flex flex-col justify-center">
               <h1 className="text-5xl md:text-7xl font-black leading-tight mb-6 drop-shadow-lg">
-                {currentLaporan.namaKegiatan}
+                {displayLaporan.namaKegiatan}
               </h1>
               <div className="flex flex-wrap gap-4 text-lg">
                 <span className="flex items-center gap-2 bg-white/20 backdrop-blur px-4 py-2 rounded-full">
-                  📍 {currentLaporan.tempatPelaksanaan}
+                  📍 {displayLaporan.tempatPelaksanaan}
                 </span>
                 <span className="flex items-center gap-2 bg-white/20 backdrop-blur px-4 py-2 rounded-full">
-                  📅 {formatTanggal(currentLaporan.uraianKegiatan?.[0]?.tanggal || currentLaporan.waktuMulai)}
+                  📅 {formatTanggal(displayLaporan.uraianKegiatan?.[0]?.tanggal || displayLaporan.waktuMulai)}
                 </span>
               </div>
             </div>
@@ -311,7 +357,7 @@ export default function LaporanMajalahPage() {
                   <h2 className="text-2xl font-black text-gray-900 mb-4 leading-tight">
                     Latar Belakang / Dasar Hukum / Tujuan
                   </h2>
-                  <div className="text-gray-700 leading-relaxed text-justify rich-text-content text-sm" dangerouslySetInnerHTML={{ __html: currentLaporan.pendahuluan }} />
+                  <div className="text-gray-700 leading-relaxed text-justify rich-text-content text-sm" dangerouslySetInnerHTML={{ __html: displayLaporan.pendahuluan }} />
                 </div>
               </div>
 
@@ -320,26 +366,26 @@ export default function LaporanMajalahPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="bg-blue-600 text-white p-5 rounded-xl">
                     <p className="text-xs uppercase tracking-wider opacity-80 mb-1">Waktu</p>
-                    <p className="font-bold">{currentLaporan.waktuMulai}</p>
-                    <p className="text-sm opacity-80">s.d. {currentLaporan.waktuSelesai}</p>
+                    <p className="font-bold">{displayLaporan.waktuMulai}</p>
+                    <p className="text-sm opacity-80">s.d. {displayLaporan.waktuSelesai}</p>
                   </div>
                   <div className="bg-green-600 text-white p-5 rounded-xl">
                     <p className="text-xs uppercase tracking-wider opacity-80 mb-1">Tempat</p>
-                    <p className="font-bold text-sm">{currentLaporan.tempatPelaksanaan}</p>
+                    <p className="font-bold text-sm">{displayLaporan.tempatPelaksanaan}</p>
                   </div>
                 </div>
 
                 <div className="border-2 border-gray-200 p-5 rounded-xl">
                   <p className="text-xs uppercase tracking-wider text-gray-500 mb-2">Sumber Pendanaan</p>
-                  <p className="font-semibold text-gray-800">{currentLaporan.sumberPendanaan}</p>
+                  <p className="font-semibold text-gray-800">{displayLaporan.sumberPendanaan}</p>
                 </div>
 
                 <div className="bg-yellow-50 border-l-4 border-yellow-400 p-5 rounded-r-xl">
                   <p className="text-xs uppercase tracking-wider text-yellow-700 mb-2">Penanggung Jawab</p>
-                  <p className="font-bold text-gray-900">{currentLaporan.pelaksana?.[0]?.nama}</p>
-                  <p className="text-sm text-gray-600">{currentLaporan.pelaksana?.[0]?.jabatan}</p>
-                  {currentLaporan.pelaksana?.[0]?.nip && (
-                    <p className="text-xs text-gray-500 mt-1">NIP. {currentLaporan.pelaksana[0].nip}</p>
+                  <p className="font-bold text-gray-900">{displayLaporan.pelaksana?.[0]?.nama}</p>
+                  <p className="text-sm text-gray-600">{displayLaporan.pelaksana?.[0]?.jabatan}</p>
+                  {displayLaporan.pelaksana?.[0]?.nip && (
+                    <p className="text-xs text-gray-500 mt-1">NIP. {displayLaporan.pelaksana[0].nip}</p>
                   )}
                 </div>
               </div>
@@ -370,7 +416,7 @@ export default function LaporanMajalahPage() {
                 <div className="col-span-2">
                   <div 
                     className="text-gray-700 leading-relaxed text-justify text-lg rich-text-content first-letter:text-6xl first-letter:font-bold first-letter:float-left first-letter:mr-3 first-letter:text-purple-600"
-                    dangerouslySetInnerHTML={{ __html: currentLaporan.uraianKegiatan?.[0]?.deskripsi || '' }}
+                    dangerouslySetInnerHTML={{ __html: displayLaporan.uraianKegiatan?.[0]?.deskripsi || '' }}
                   />
                 </div>
 
@@ -438,14 +484,14 @@ export default function LaporanMajalahPage() {
                   <div className="max-h-[35%] overflow-hidden">
                     <h3 className="text-xl font-bold text-gray-900 mb-2">💡 Rekomendasi</h3>
                     <div className="bg-gradient-to-br from-blue-50 to-purple-50 p-4 rounded-xl max-h-[calc(100%-2rem)] overflow-hidden">
-                      <div className="text-gray-700 leading-relaxed rich-text-content text-sm line-clamp-6" dangerouslySetInnerHTML={{ __html: currentLaporan.rekomendasi }} />
+                      <div className="text-gray-700 leading-relaxed rich-text-content text-sm line-clamp-6" dangerouslySetInnerHTML={{ __html: displayLaporan.rekomendasi }} />
                     </div>
                   </div>
 
                   <div className="max-h-[35%] overflow-hidden">
                     <h3 className="text-xl font-bold text-gray-900 mb-2">🙏 Ucapan Terima Kasih</h3>
                     <div className="bg-gradient-to-br from-yellow-50 to-orange-50 p-4 rounded-xl max-h-[calc(100%-2rem)] overflow-hidden">
-                      <div className="text-gray-700 leading-relaxed rich-text-content text-sm line-clamp-6" dangerouslySetInnerHTML={{ __html: currentLaporan.ucapanTerimakasih }} />
+                      <div className="text-gray-700 leading-relaxed rich-text-content text-sm line-clamp-6" dangerouslySetInnerHTML={{ __html: displayLaporan.ucapanTerimakasih }} />
                     </div>
                   </div>
                 </div>
@@ -453,8 +499,8 @@ export default function LaporanMajalahPage() {
                 {/* Signature - Fixed at bottom */}
                 <div className="bg-gray-900 text-white p-4 rounded-xl flex-shrink-0 mt-4">
                   <p className="text-xs opacity-70 mb-2">Penanggung Jawab Kegiatan</p>
-                  <p className="text-lg font-bold">{currentLaporan.pelaksana?.[0]?.nama}</p>
-                  <p className="text-xs opacity-70">{currentLaporan.pelaksana?.[0]?.jabatan}</p>
+                  <p className="text-lg font-bold">{displayLaporan.pelaksana?.[0]?.nama}</p>
+                  <p className="text-xs opacity-70">{displayLaporan.pelaksana?.[0]?.jabatan}</p>
                   <div className="mt-3 pt-3 border-t border-gray-700 text-xs opacity-50">
                     {formatTanggal(new Date().toISOString())}
                   </div>
