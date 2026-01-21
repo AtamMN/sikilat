@@ -272,7 +272,7 @@ function LaporanContent() {
               📝 Buat Laporan Baru
             </button>
             <button
-              onClick={() => router.push('/laporan/majalah')}
+              onClick={() => router.push(laporanId ? `/laporan/majalah?id=${laporanId}` : '/laporan/majalah')}
               className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-colors flex items-center gap-2"
             >
               📰 Format Majalah
