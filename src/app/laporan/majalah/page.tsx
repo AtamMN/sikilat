@@ -182,7 +182,7 @@ function MajalahContent() {
   };
 
   const handleBack = () => {
-    router.push('/laporan');
+    router.push(laporanId ? `/laporan?id=${laporanId}` : '/laporan');
   };
 
   const handleBackToForm = () => {

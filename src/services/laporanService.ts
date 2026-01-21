@@ -3,8 +3,8 @@
  * SIKILAT - Sistem Informasi Laporan Kegiatan Terintegrasi
  * 
  * Service layer untuk operasi CRUD laporan.
- * Menggunakan Firebase Firestore sebagai database utama
- * dengan localStorage sebagai fallback/cache.
+ * Menggunakan Firebase Firestore sebagai database utama.
+ * localStorage hanya digunakan untuk menyimpan ID referensi (pointer).
  */
 
 import { LaporanType, LaporanFormInput, ServiceResponse } from '@/types/laporan';
@@ -333,75 +333,20 @@ export const submitLaporan = async (data: LaporanType, existingDraftId?: string)
       };
     } catch (error) {
       console.error('Firebase error:', error);
-      // Fallback ke localStorage jika Firebase gagal
-      return submitLaporanToLocalStorage(data);
+      return {
+        success: false,
+        error: 'Gagal menyimpan laporan. Periksa koneksi internet.',
+        message: 'Firebase error',
+      };
     }
   }
 
-  // Fallback ke localStorage jika Firebase tidak dikonfigurasi
-  return submitLaporanToLocalStorage(data);
-};
-
-/**
- * Helper: Submit ke localStorage (fallback)
- */
-const submitLaporanToLocalStorage = async (data: LaporanType): Promise<ServiceResponse<LaporanType>> => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      try {
-        const laporanWithId: LaporanType = {
-          ...data,
-          id: data.id || generateId(),
-          createdAt: data.createdAt || new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        };
-
-        const savedCurrent = saveToLocalStorage(STORAGE_KEYS.LAPORAN_DATA, laporanWithId);
-
-        if (!savedCurrent) {
-          const laporanWithoutImages: LaporanType = {
-            ...laporanWithId,
-            uraianKegiatan: laporanWithId.uraianKegiatan?.map(u => ({
-              ...u,
-              gambar: [],
-            })),
-          };
-          
-          const savedWithoutImages = saveToLocalStorage(STORAGE_KEYS.LAPORAN_DATA, laporanWithoutImages);
-          
-          if (savedWithoutImages) {
-            resolve({
-              success: true,
-              data: laporanWithoutImages,
-              message: 'Laporan disimpan tanpa gambar (ukuran terlalu besar)',
-            });
-            return;
-          }
-        }
-
-        try {
-          const existingList = getFromLocalStorage<LaporanType[]>(STORAGE_KEYS.LAPORAN_LIST) || [];
-          const trimmedList = existingList.slice(-4);
-          const updatedList = [...trimmedList, laporanWithId];
-          saveToLocalStorage(STORAGE_KEYS.LAPORAN_LIST, updatedList);
-        } catch {
-          console.warn('Could not save to laporan list');
-        }
-
-        resolve({
-          success: true,
-          data: laporanWithId,
-          message: 'Laporan disimpan ke penyimpanan lokal',
-        });
-      } catch (error) {
-        resolve({
-          success: false,
-          error: error instanceof Error ? error.message : 'Unknown error',
-          message: 'Gagal menyimpan laporan',
-        });
-      }
-    }, 300);
-  });
+  // Firebase tidak dikonfigurasi
+  return {
+    success: false,
+    error: 'Firebase tidak dikonfigurasi. Hubungi administrator.',
+    message: 'Firebase not configured',
+  };
 };
 
 /**
@@ -433,22 +378,11 @@ export const getLaporanById = async (id: string): Promise<ServiceResponse<Lapora
       return { success: false, error: 'Laporan tidak ditemukan' };
     } catch (error) {
       console.error('Firebase error:', error);
-      // Fallback ke localStorage
+      return { success: false, error: 'Gagal memuat laporan. Periksa koneksi internet.' };
     }
   }
 
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const list = getFromLocalStorage<LaporanType[]>(STORAGE_KEYS.LAPORAN_LIST) || [];
-      const laporan = list.find(l => l.id === id);
-      
-      if (laporan) {
-        resolve({ success: true, data: laporan });
-      } else {
-        resolve({ success: false, error: 'Laporan tidak ditemukan' });
-      }
-    }, 300);
-  });
+  return { success: false, error: 'Firebase tidak dikonfigurasi' };
 };
 
 /**
@@ -484,12 +418,8 @@ export const getCurrentLaporan = async (): Promise<ServiceResponse<LaporanType>>
       }
     } catch (error) {
       console.error('Firebase error getting current laporan:', error);
+      return { success: false, error: 'Gagal memuat laporan. Periksa koneksi internet.' };
     }
-  }
-  
-  // Fallback ke localStorage jika Firestore gagal
-  if (savedLaporan) {
-    return { success: true, data: savedLaporan };
   }
   
   return { success: false, error: 'Tidak ada laporan yang tersimpan' };
@@ -520,16 +450,11 @@ export const getAllLaporan = async (): Promise<ServiceResponse<LaporanType[]>> =
       return { success: true, data: laporanList };
     } catch (error) {
       console.error('Firebase error:', error);
-      // Fallback ke localStorage
+      return { success: false, data: [], error: 'Gagal memuat daftar laporan. Periksa koneksi internet.' };
     }
   }
 
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const list = getFromLocalStorage<LaporanType[]>(STORAGE_KEYS.LAPORAN_LIST) || [];
-      resolve({ success: true, data: list });
-    }, 300);
-  });
+  return { success: false, data: [], error: 'Firebase tidak dikonfigurasi' };
 };
 
 /**
@@ -567,28 +492,11 @@ export const updateLaporan = async (id: string, data: Partial<LaporanType>): Pro
       return { success: true, message: 'Laporan berhasil diupdate' };
     } catch (error) {
       console.error('Firebase error:', error);
-      // Fallback ke localStorage
+      return { success: false, error: 'Gagal mengupdate laporan. Periksa koneksi internet.' };
     }
   }
 
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const list = getFromLocalStorage<LaporanType[]>(STORAGE_KEYS.LAPORAN_LIST) || [];
-      const index = list.findIndex(l => l.id === id);
-      
-      if (index !== -1) {
-        list[index] = {
-          ...list[index],
-          ...data,
-          updatedAt: new Date().toISOString(),
-        };
-        saveToLocalStorage(STORAGE_KEYS.LAPORAN_LIST, list);
-        resolve({ success: true, data: list[index], message: 'Laporan berhasil diupdate' });
-      } else {
-        resolve({ success: false, error: 'Laporan tidak ditemukan' });
-      }
-    }, 300);
-  });
+  return { success: false, error: 'Firebase tidak dikonfigurasi' };
 };
 
 /**
@@ -602,18 +510,11 @@ export const deleteLaporan = async (id: string): Promise<ServiceResponse<null>> 
       return { success: true, message: 'Laporan berhasil dihapus' };
     } catch (error) {
       console.error('Firebase error:', error);
-      // Fallback ke localStorage
+      return { success: false, error: 'Gagal menghapus laporan. Periksa koneksi internet.' };
     }
   }
 
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const list = getFromLocalStorage<LaporanType[]>(STORAGE_KEYS.LAPORAN_LIST) || [];
-      const filteredList = list.filter(l => l.id !== id);
-      saveToLocalStorage(STORAGE_KEYS.LAPORAN_LIST, filteredList);
-      resolve({ success: true, message: 'Laporan berhasil dihapus' });
-    }, 300);
-  });
+  return { success: false, error: 'Firebase tidak dikonfigurasi' };
 };
 
 /**
@@ -685,23 +586,17 @@ export const saveDraft = async (data: Partial<LaporanFormInput>): Promise<Servic
       return { success: true, data: savedData, message: 'Draft berhasil disimpan ke database', warning };
     } catch (error) {
       console.error('Firebase error saving draft:', error);
-      // Fallback to localStorage
+      return { 
+        success: false, 
+        error: 'Gagal menyimpan draft. Periksa koneksi internet.' 
+      };
     }
   }
   
-  // Fallback to localStorage
-  try {
-    saveToLocalStorage(STORAGE_KEYS.DRAFT_DATA, {
-      ...data,
-      savedAt: new Date().toISOString(),
-    });
-    return { success: true, message: 'Draft berhasil disimpan' };
-  } catch (error) {
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Unknown error' 
-    };
-  }
+  return { 
+    success: false, 
+    error: 'Firebase tidak dikonfigurasi' 
+  };
 };
 
 /**
@@ -733,15 +628,11 @@ export const getDraft = async (): Promise<ServiceResponse<Partial<LaporanFormInp
       return { success: false, error: 'Tidak ada draft tersimpan' };
     } catch (error) {
       console.error('Firebase error getting draft:', error);
+      return { success: false, error: 'Gagal memuat draft. Periksa koneksi internet.' };
     }
   }
   
-  // Fallback ke localStorage
-  const draft = getFromLocalStorage<Partial<LaporanFormInput>>(STORAGE_KEYS.DRAFT_DATA);
-  if (draft) {
-    return { success: true, data: draft };
-  }
-  return { success: false, error: 'Tidak ada draft tersimpan' };
+  return { success: false, error: 'Firebase tidak dikonfigurasi' };
 };
 
 /**
