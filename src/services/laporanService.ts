@@ -150,16 +150,9 @@ const generateId = (): string => {
 };
 
 /**
- * Check if a string is a base64 data URL (which can't be stored in Firestore)
- */
-const isBase64DataUrl = (str: string): boolean => {
-  return typeof str === 'string' && str.startsWith('data:');
-};
-
-/**
  * Sanitize data for Firebase - remove undefined values and invalid nested entities
  * Firebase tidak menerima undefined, null dalam array, atau nested entities yang tidak valid
- * Base64 data URLs juga dihapus karena terlalu besar untuk Firestore
+ * Base64 images yang sudah dikompresi TETAP disimpan (sudah dikecilkan ukurannya)
  */
 const sanitizeForFirebase = (obj: unknown, key?: string): unknown => {
   // Handle null/undefined
@@ -169,11 +162,7 @@ const sanitizeForFirebase = (obj: unknown, key?: string): unknown => {
   
   // Handle primitives (string, number, boolean)
   if (typeof obj !== 'object') {
-    // Skip base64 data URLs - they're too large for Firestore
-    if (typeof obj === 'string' && isBase64DataUrl(obj)) {
-      console.warn('Skipping base64 data URL - gambar harus diupload ke Firebase Storage terlebih dahulu');
-      return null;
-    }
+    // Base64 data URLs sekarang diizinkan (sudah dikompresi)
     return obj;
   }
   
@@ -186,8 +175,6 @@ const sanitizeForFirebase = (obj: unknown, key?: string): unknown => {
   if (Array.isArray(obj)) {
     const filtered = obj
       .filter(item => item !== undefined && item !== null && item !== '')
-      // Filter out base64 strings from arrays
-      .filter(item => !(typeof item === 'string' && isBase64DataUrl(item)))
       .map(item => sanitizeForFirebase(item))
       .filter(item => {
         // Remove empty objects and empty arrays from final result
@@ -195,7 +182,7 @@ const sanitizeForFirebase = (obj: unknown, key?: string): unknown => {
           if (Array.isArray(item)) return item.length > 0;
           return Object.keys(item).length > 0;
         }
-        // Remove null values that came from base64 filtering
+        // Remove null values
         if (item === null) return false;
         return true;
       });
