@@ -331,7 +331,7 @@ function MajalahContent() {
             <div className="flex justify-between items-end">
               <div>
                 <p className="text-sm opacity-80">Balai Bahasa Provinsi Jawa Barat</p>
-                <p className="text-xs opacity-60">Kementerian Pendidikan, Kebudayaan, Riset, dan Teknologi</p>
+                <p className="text-xs opacity-60">Kementerian Pendidikan Dasar dan Menengah</p>
               </div>
               <div className="text-6xl font-black opacity-20">
                 SIKILAT
@@ -525,12 +525,12 @@ function MajalahContent() {
             <div className="space-y-2 text-sm opacity-70">
               <p>Balai Bahasa Provinsi Jawa Barat</p>
               <p>Badan Pengembangan dan Pembinaan Bahasa</p>
-              <p>Kementerian Pendidikan, Kebudayaan, Riset, dan Teknologi</p>
+              <p>Kementerian Pendidikan Dasar dan Menengah</p>
             </div>
             
             <div className="mt-12 text-xs opacity-40">
               <p>Jalan Sumbawa Nomor 11 Bandung 40113</p>
-              <p>balaibahasajabar.kemdikbud.go.id</p>
+              <p>balaibahasajabar.kemendikdasmen.go.id</p>
             </div>
           </div>
         </div>

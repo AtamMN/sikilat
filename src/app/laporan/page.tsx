@@ -295,32 +295,31 @@ function LaporanContent() {
       <div className="bg-gray-100 min-h-screen py-8 print:bg-white print:py-0">
         <div className="a4-paper bg-white mx-auto shadow-lg print:shadow-none">
           
-          {/* Kop Surat */}
-          <header className="border-b-4 border-black pb-4 mb-6">
-            <div className="flex items-center gap-4">
-              {/* Logo Placeholder */}
-              <div className="w-20 h-20 bg-gray-200 rounded flex items-center justify-center print:bg-white print:border print:border-gray-300">
-                <span className="text-xs text-gray-500 text-center">LOGO<br/>INSTANSI</span>
+          {/* Kop Surat - Kemendikdasmen 2026 */}
+          <header className="pb-4 mb-6">
+            <div className="flex items-center gap-0">
+              {/* Logo Jenama Sekunder (Tutwuri + Kemendikdasmen) */}
+              <div className="flex-shrink-0 pr-4">
+                <img 
+                  src="/assets/2. Logo Jenama_sekunder.png" 
+                  alt="Logo Kemendikdasmen" 
+                  className="h-16 w-auto"
+                />
               </div>
               
-              <div className="flex-1 text-center">
-                <p className="text-sm font-medium">KEMENTERIAN PENDIDIKAN, KEBUDAYAAN, RISET, DAN TEKNOLOGI</p>
-                <p className="text-sm font-medium">BADAN PENGEMBANGAN DAN PEMBINAAN BAHASA</p>
-                <h1 className="text-lg font-bold">BALAI BAHASA PROVINSI JAWA BARAT</h1>
-                <p className="text-xs mt-1">
-                  Jalan Sumbawa Nomor 11 Bandung 40113
-                </p>
-                <p className="text-xs">
-                  Telepon: (022) 7271083, Faksimile: (022) 7271083
-                </p>
-                <p className="text-xs">
-                  Laman: balaibahasajabar.kemdikbud.go.id, Pos-el: balaibahasabandung@kemdikbud.go.id
-                </p>
-              </div>
-
-              {/* Logo Placeholder 2 */}
-              <div className="w-20 h-20 bg-gray-200 rounded flex items-center justify-center print:bg-white print:border print:border-gray-300">
-                <span className="text-xs text-gray-500 text-center">LOGO<br/>KEDUA</span>
+              {/* Garis Pembatas Vertikal Biru */}
+              <div className="w-[2px] h-16 bg-[#297bbf] flex-shrink-0" />
+              
+              {/* Teks Instansi */}
+              <div className="pl-4 flex-1">
+                <h1 className="text-[11pt] font-bold text-[#297bbf]" style={{ fontFamily: 'Montserrat, sans-serif' }}>
+                  Balai Bahasa Provinsi Jawa Barat
+                </h1>
+                <div className="text-[7pt] text-black mt-1 space-y-0" style={{ fontFamily: 'Montserrat, sans-serif', fontWeight: 500 }}>
+                  <p>Jalan Sumbawa Nomor 11 Bandung 40113</p>
+                  <p>www.balaibahasajabar.kemdikdasmen.go.id</p>
+                  <p>☎ 177 | (022) 7271083</p>
+                </div>
               </div>
             </div>
           </header>
@@ -496,6 +495,8 @@ function LaporanContent() {
 
       {/* Print Styles */}
       <style jsx global>{`
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');
+        
         @media print {
           @page {
             size: A4;
