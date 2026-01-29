@@ -53,6 +53,200 @@ const formatTanggalSingkat = (dateString: string): string => {
   }
 };
 
+// Props untuk konten laporan
+interface LaporanContentProps {
+  laporan: LaporanType;
+  uraianKegiatan: UraianHari[] | null;
+}
+
+// Komponen konten laporan yang dapat di-reuse
+const LaporanDocumentContent: React.FC<LaporanContentProps> = ({ laporan, uraianKegiatan }) => {
+  return (
+    <>
+      {/* Kop Surat - Kemendikdasmen 2026 */}
+      <header className="kop-surat">
+        <div className="flex items-center gap-0">
+          <div className="flex-shrink-0 pr-4">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img 
+              src="/assets/2. Logo Jenama_sekunder.png" 
+              alt="Logo Kemendikdasmen" 
+              className="h-16 w-auto"
+            />
+          </div>
+          <div className="w-[2px] h-16 bg-[#297bbf] flex-shrink-0" />
+          <div className="pl-4 flex-1">
+            <h1 className="text-[11pt] font-bold text-[#297bbf]" style={{ fontFamily: 'Montserrat, sans-serif' }}>
+              Balai Bahasa Provinsi Jawa Barat
+            </h1>
+            <div className="text-[7pt] text-black mt-1 space-y-0" style={{ fontFamily: 'Montserrat, sans-serif', fontWeight: 500 }}>
+              <p>Jalan Sumbawa Nomor 11 Bandung 40113</p>
+              <p>www.balaibahasajabar.kemdikdasmen.go.id</p>
+              <p>☎ 177 | (022) 7271083</p>
+            </div>
+          </div>
+        </div>
+      </header>
+      
+      <hr className="border-gray-300 mb-4" />
+
+      {/* Judul Laporan */}
+      <div className="text-center mb-4">
+        <h2 className="text-base font-bold uppercase tracking-wide">LAPORAN KEGIATAN</h2>
+        <h3 className="text-sm font-semibold mt-1 uppercase">
+          {laporan.namaKegiatan}
+        </h3>
+      </div>
+
+      {/* BAB I: PENDAHULUAN */}
+      <section className="mb-4 compact-section">
+        <h3 className="text-sm font-bold mb-2">BAB I. PENDAHULUAN</h3>
+        
+        <div className="space-y-2 text-justify text-[11pt] leading-snug">
+          <div>
+            <h4 className="font-semibold text-[11pt] mb-0.5">A. Latar Belakang / Dasar Hukum / Tujuan</h4>
+            <div className="pl-4 rich-text-content" dangerouslySetInnerHTML={{ __html: laporan.pendahuluan }} />
+          </div>
+
+          <div>
+            <h4 className="font-semibold text-[11pt] mb-0.5">B. Waktu dan Tempat Pelaksanaan</h4>
+            <div className="pl-4">
+              <table className="text-[11pt]">
+                <tbody>
+                  <tr>
+                    <td className="pr-3">Hari/Tanggal</td>
+                    <td className="pr-2">:</td>
+                    <td>{formatTanggal(laporan.uraianKegiatan?.[0]?.tanggal || laporan.waktuMulai)}</td>
+                  </tr>
+                  <tr>
+                    <td className="pr-3">Waktu</td>
+                    <td className="pr-2">:</td>
+                    <td>{laporan.waktuMulai} s.d. {laporan.waktuSelesai}</td>
+                  </tr>
+                  <tr>
+                    <td className="pr-3">Tempat</td>
+                    <td className="pr-2">:</td>
+                    <td>{laporan.tempatPelaksanaan}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div>
+            <h4 className="font-semibold text-[11pt] mb-0.5">C. Pelaksana</h4>
+            <div className="pl-4 text-[11pt]">
+              {laporan.pelaksana?.map((p, i) => (
+                <p key={i} className="leading-snug">
+                  {p.nama} ({p.jabatan})
+                  {p.nip && ` - NIP. ${p.nip}`}
+                </p>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <h4 className="font-semibold text-[11pt] mb-0.5">D. Sumber Pendanaan</h4>
+            <p className="pl-4 text-[11pt]">{laporan.sumberPendanaan}</p>
+          </div>
+        </div>
+      </section>
+
+      {/* BAB II: URAIAN KEGIATAN */}
+      <section className="mb-4 compact-section">
+        <h3 className="text-sm font-bold mb-2">BAB II. URAIAN KEGIATAN</h3>
+        
+        {(uraianKegiatan || laporan.uraianKegiatan)?.map((uraian, index) => (
+          <div key={index} className="mb-3 avoid-break">
+            <h4 className="font-semibold text-[11pt] mb-1">
+              Hari ke-{uraian.hari} ({formatTanggalSingkat(uraian.tanggal)})
+            </h4>
+            <div 
+              className="text-justify text-[11pt] leading-snug pl-4 rich-text-content"
+              dangerouslySetInnerHTML={{ __html: uraian.deskripsi }}
+            />
+            
+            {/* Dokumentasi Foto */}
+            {uraian.gambar && uraian.gambar.length > 0 && (
+              <div className="mt-3 avoid-break">
+                <p className="font-medium text-[10pt] mb-2 pl-4">Dokumentasi:</p>
+                <div className="dokumentasi-grid pl-4">
+                  {uraian.gambar.map((img, imgIndex) => (
+                    <figure key={imgIndex}>
+                      {img && !img.startsWith('rtdb://') ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={img} alt={`Dokumentasi ${imgIndex + 1}`} />
+                      ) : (
+                        <div className="w-full h-[120px] bg-gray-100 rounded border flex items-center justify-center">
+                          <span className="text-gray-400 text-xs">Memuat...</span>
+                        </div>
+                      )}
+                      <figcaption>Gambar {imgIndex + 1}</figcaption>
+                    </figure>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
+      </section>
+
+      {/* BAB III: PENUTUP */}
+      <section className="mb-4 compact-section">
+        <h3 className="text-sm font-bold mb-2">BAB III. PENUTUP</h3>
+        
+        <div className="space-y-2 text-justify text-[11pt] leading-snug">
+          <div>
+            <h4 className="font-semibold text-[11pt] mb-0.5">A. Rekomendasi</h4>
+            <div className="pl-4 rich-text-content" dangerouslySetInnerHTML={{ __html: laporan.rekomendasi }} />
+          </div>
+
+          <div>
+            <h4 className="font-semibold text-[11pt] mb-0.5">B. Ucapan Terima Kasih</h4>
+            <div className="pl-4 rich-text-content" dangerouslySetInnerHTML={{ __html: laporan.ucapanTerimakasih }} />
+          </div>
+        </div>
+      </section>
+
+      {/* Tanda Tangan */}
+      <div className="signature-section flex justify-end avoid-break">
+        <div className="signature-box">
+          <p className="text-[11pt]">Bandung, {formatTanggalSingkat(new Date().toISOString())}</p>
+          <p className="mt-0.5 text-[11pt]">Penanggung Jawab Kegiatan,</p>
+          
+          <div className="signature-space flex items-end justify-center">
+            {/* Space for signature */}
+          </div>
+          
+          <p className="font-semibold underline">
+            {laporan.pelaksana?.[0]?.nama || '________________________'}
+          </p>
+          {laporan.pelaksana?.[0]?.nip && (
+            <p className="text-sm">NIP. {laporan.pelaksana[0].nip}</p>
+          )}
+        </div>
+      </div>
+
+      {/* Mengetahui Section */}
+      <div className="mt-4 border-t pt-4 avoid-break">
+        <div className="flex justify-between">
+          <div className="signature-box">
+            <p className="text-[11pt]">Mengetahui,</p>
+            <p className="text-[11pt]">Kepala Balai Bahasa Provinsi Jawa Barat</p>
+            
+            <div className="signature-space flex items-end justify-center">
+              {/* Space for signature */}
+            </div>
+            
+            <p className="font-semibold underline">________________________</p>
+            <p className="text-sm">NIP. ________________________</p>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+};
+
 export default function LaporanPage() {
   return (
     <Suspense fallback={
@@ -77,6 +271,15 @@ function LaporanContent() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [resolvedUraian, setResolvedUraian] = useState<UraianHari[] | null>(null);
   const [isResolvingImages, setIsResolvingImages] = useState(false);
+  
+  // Ref untuk mengukur tinggi konten
+  const contentRef = React.useRef<HTMLDivElement>(null);
+  const [contentHeight, setContentHeight] = useState(0);
+  const [pagesReady, setPagesReady] = useState(false);
+  
+  // A4 content height dalam pixel (257mm = tinggi konten setelah padding)
+  // Menggunakan 96 DPI: 257mm × 3.7795275591 px/mm ≈ 971px
+  const A4_CONTENT_HEIGHT_PX = 971;
 
   // Load laporan by ID from URL or from context
   useEffect(() => {
@@ -192,6 +395,45 @@ function LaporanContent() {
     resolveImages();
   }, [displayLaporan]);
 
+  // Mengukur tinggi konten untuk menentukan jumlah halaman
+  useEffect(() => {
+    // Delay measurement to ensure images are loaded
+    const measureContent = () => {
+      if (contentRef.current) {
+        const height = contentRef.current.scrollHeight;
+        setContentHeight(height);
+        setPagesReady(true);
+      }
+    };
+    
+    // Initial measurement
+    const timer = setTimeout(measureContent, 100);
+    
+    // Re-measure when images load
+    const handleImageLoad = () => {
+      measureContent();
+    };
+    
+    if (contentRef.current) {
+      const images = contentRef.current.querySelectorAll('img');
+      images.forEach(img => {
+        if (!img.complete) {
+          img.addEventListener('load', handleImageLoad);
+        }
+      });
+    }
+    
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [displayLaporan, resolvedUraian]);
+
+  // Hitung jumlah halaman yang dibutuhkan
+  const totalPages = Math.max(1, Math.ceil(contentHeight / A4_CONTENT_HEIGHT_PX));
+  
+  // Generate array halaman untuk rendering
+  const pageNumbers = Array.from({ length: totalPages }, (_, i) => i);
+
   const handlePrint = () => {
     setIsPrinting(true);
     setTimeout(() => {
@@ -291,205 +533,68 @@ function LaporanContent() {
         </div>
       </div>
 
-      {/* A4 Paper Container */}
-      <div className="bg-gray-100 min-h-screen py-8 print:bg-white print:py-0">
-        <div className="a4-paper bg-white mx-auto shadow-lg print:shadow-none">
-          
-          {/* Kop Surat - Kemendikdasmen 2026 */}
-          <header className="pb-4 mb-6">
-            <div className="flex items-center gap-0">
-              {/* Logo Jenama Sekunder (Tutwuri + Kemendikdasmen) */}
-              <div className="flex-shrink-0 pr-4">
-                <img 
-                  src="/assets/2. Logo Jenama_sekunder.png" 
-                  alt="Logo Kemendikdasmen" 
-                  className="h-16 w-auto"
+      {/* 
+        A4 Paper Preview - Multi-Page dengan JavaScript Pagination
+        1. Render konten di container tersembunyi untuk mengukur tinggi
+        2. Render halaman-halaman terpisah dengan viewport clipping
+        3. Setiap halaman menampilkan bagian konten yang sesuai
+      */}
+      <div className="print-wrapper">
+        {/* Hidden container untuk mengukur tinggi konten */}
+        <div 
+          ref={contentRef}
+          className="content-measure"
+          aria-hidden="true"
+        >
+          <LaporanDocumentContent 
+            laporan={displayLaporan} 
+            uraianKegiatan={resolvedUraian} 
+          />
+        </div>
+        
+        {/* Visible multi-page preview */}
+        {pagesReady && pageNumbers.map((pageNum) => (
+          <div key={pageNum} className="a4-page">
+            <div 
+              className="page-viewport"
+              style={{
+                height: `${A4_CONTENT_HEIGHT_PX}px`,
+                overflow: 'hidden',
+              }}
+            >
+              <div 
+                className="page-content"
+                style={{
+                  transform: `translateY(-${pageNum * A4_CONTENT_HEIGHT_PX}px)`,
+                }}
+              >
+                <LaporanDocumentContent 
+                  laporan={displayLaporan} 
+                  uraianKegiatan={resolvedUraian} 
                 />
               </div>
-              
-              {/* Garis Pembatas Vertikal Biru */}
-              <div className="w-[2px] h-16 bg-[#297bbf] flex-shrink-0" />
-              
-              {/* Teks Instansi */}
-              <div className="pl-4 flex-1">
-                <h1 className="text-[11pt] font-bold text-[#297bbf]" style={{ fontFamily: 'Montserrat, sans-serif' }}>
-                  Balai Bahasa Provinsi Jawa Barat
-                </h1>
-                <div className="text-[7pt] text-black mt-1 space-y-0" style={{ fontFamily: 'Montserrat, sans-serif', fontWeight: 500 }}>
-                  <p>Jalan Sumbawa Nomor 11 Bandung 40113</p>
-                  <p>www.balaibahasajabar.kemdikdasmen.go.id</p>
-                  <p>☎ 177 | (022) 7271083</p>
-                </div>
-              </div>
             </div>
-          </header>
-
-          {/* Judul Laporan */}
-          <div className="text-center mb-8">
-            <h2 className="text-xl font-bold uppercase tracking-wide">LAPORAN KEGIATAN</h2>
-            <h3 className="text-lg font-semibold mt-2 uppercase">
-              {displayLaporan.namaKegiatan}
-            </h3>
-          </div>
-
-          {/* BAB I: PENDAHULUAN */}
-          <section className="mb-6">
-            <h3 className="text-base font-bold mb-4">BAB I. PENDAHULUAN</h3>
             
-            <div className="space-y-4 text-justify leading-relaxed">
-              <div>
-                <h4 className="font-semibold mb-1">A. Latar Belakang / Dasar Hukum / Tujuan</h4>
-                <div className="pl-4 rich-text-content" dangerouslySetInnerHTML={{ __html: displayLaporan.pendahuluan }} />
-              </div>
-
-              <div>
-                <h4 className="font-semibold mb-1">B. Waktu dan Tempat Pelaksanaan</h4>
-                <div className="pl-4">
-                  <table className="text-sm">
-                    <tbody>
-                      <tr>
-                        <td className="pr-4">Hari/Tanggal</td>
-                        <td className="pr-2">:</td>
-                        <td>{formatTanggal(displayLaporan.uraianKegiatan?.[0]?.tanggal || displayLaporan.waktuMulai)}</td>
-                      </tr>
-                      <tr>
-                        <td className="pr-4">Waktu</td>
-                        <td className="pr-2">:</td>
-                        <td>{displayLaporan.waktuMulai} s.d. {displayLaporan.waktuSelesai}</td>
-                      </tr>
-                      <tr>
-                        <td className="pr-4">Tempat</td>
-                        <td className="pr-2">:</td>
-                        <td>{displayLaporan.tempatPelaksanaan}</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              <div>
-                <h4 className="font-semibold mb-1">C. Pelaksana</h4>
-                <div className="pl-4">
-                  {displayLaporan.pelaksana?.map((p, i) => (
-                    <p key={i}>
-                      {p.nama} ({p.jabatan})
-                      {p.nip && ` - NIP. ${p.nip}`}
-                    </p>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <h4 className="font-semibold mb-1">D. Sumber Pendanaan</h4>
-                <p className="pl-4">{displayLaporan.sumberPendanaan}</p>
-              </div>
-            </div>
-          </section>
-
-          {/* BAB II: URAIAN KEGIATAN */}
-          <section className="mb-6">
-            <h3 className="text-base font-bold mb-4">BAB II. URAIAN KEGIATAN</h3>
-            
-            {(resolvedUraian || displayLaporan.uraianKegiatan)?.map((uraian, index) => (
-              <div key={index} className="mb-4">
-                <h4 className="font-semibold mb-2">
-                  Hari ke-{uraian.hari} ({formatTanggalSingkat(uraian.tanggal)})
-                </h4>
-                <div 
-                  className="text-justify leading-relaxed pl-4 rich-text-content"
-                  dangerouslySetInnerHTML={{ __html: uraian.deskripsi }}
-                />
-                
-                {/* Dokumentasi Foto */}
-                {uraian.gambar && uraian.gambar.length > 0 && (
-                  <div className="mt-4">
-                    <p className="font-medium mb-2 pl-4">Dokumentasi:</p>
-                    <div className="grid grid-cols-2 gap-4 pl-4">
-                      {uraian.gambar.map((img, imgIndex) => (
-                        <figure key={imgIndex} className="text-center">
-                          {/* Hanya render img jika bukan rtdb:// URL */}
-                          {img && !img.startsWith('rtdb://') ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img 
-                              src={img} 
-                              alt={`Dokumentasi ${imgIndex + 1}`}
-                              className="w-full h-48 object-cover rounded border"
-                            />
-                          ) : (
-                            <div className="w-full h-48 bg-gray-100 rounded border flex items-center justify-center">
-                              <div className="text-center text-gray-400">
-                                <svg className="w-8 h-8 mx-auto animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                </svg>
-                                <p className="text-xs mt-2">Memuat...</p>
-                              </div>
-                            </div>
-                          )}
-                          <figcaption className="text-xs text-gray-600 mt-1">
-                            Gambar {imgIndex + 1}
-                          </figcaption>
-                        </figure>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            ))}
-          </section>
-
-          {/* BAB III: PENUTUP */}
-          <section className="mb-8">
-            <h3 className="text-base font-bold mb-4">BAB III. PENUTUP</h3>
-            
-            <div className="space-y-4 text-justify leading-relaxed">
-              <div>
-                <h4 className="font-semibold mb-1">A. Rekomendasi</h4>
-                <div className="pl-4 rich-text-content" dangerouslySetInnerHTML={{ __html: displayLaporan.rekomendasi }} />
-              </div>
-
-              <div>
-                <h4 className="font-semibold mb-1">B. Ucapan Terima Kasih</h4>
-                <div className="pl-4 rich-text-content" dangerouslySetInnerHTML={{ __html: displayLaporan.ucapanTerimakasih }} />
-              </div>
-            </div>
-          </section>
-
-          {/* Tanda Tangan */}
-          <div className="mt-12 flex justify-end">
-            <div className="text-center">
-              <p>Bandung, {formatTanggalSingkat(new Date().toISOString())}</p>
-              <p className="mt-1">Penanggung Jawab Kegiatan,</p>
-              
-              <div className="h-20 flex items-end justify-center">
-                {/* Space for signature */}
-              </div>
-              
-              <p className="font-semibold underline">
-                {displayLaporan.pelaksana?.[0]?.nama || '________________________'}
-              </p>
-              {displayLaporan.pelaksana?.[0]?.nip && (
-                <p className="text-sm">NIP. {displayLaporan.pelaksana[0].nip}</p>
-              )}
+            {/* Page number indicator - hidden when printing */}
+            <div className="print:hidden page-number">
+              Halaman {pageNum + 1} dari {totalPages}
             </div>
           </div>
-
-          {/* Mengetahui Section */}
-          <div className="mt-8 border-t pt-6">
-            <div className="flex justify-between">
-              <div className="text-center">
-                <p>Mengetahui,</p>
-                <p>Kepala Balai Bahasa Provinsi Jawa Barat</p>
-                
-                <div className="h-20 flex items-end justify-center">
-                  {/* Space for signature */}
-                </div>
-                
-                <p className="font-semibold underline">________________________</p>
-                <p className="text-sm">NIP. ________________________</p>
-              </div>
-            </div>
+        ))}
+        
+        {/* Loading indicator sebelum pages ready */}
+        {!pagesReady && (
+          <div className="a4-page flex items-center justify-center">
+            <div className="text-gray-400">Memuat preview...</div>
           </div>
-
+        )}
+        
+        {/* Print-only: Single flowing content tanpa clipping */}
+        <div className="print-content-only">
+          <LaporanDocumentContent 
+            laporan={displayLaporan} 
+            uraianKegiatan={resolvedUraian} 
+          />
         </div>
       </div>
 
@@ -497,45 +602,267 @@ function LaporanContent() {
       <style jsx global>{`
         @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');
         
+        /* 
+         * A4 Paper Multi-Page Preview
+         * - Konten diukur di container tersembunyi
+         * - Setiap halaman menampilkan bagian konten yang sesuai dengan viewport clipping
+         * - Saat print, gunakan konten flowing normal
+         */
+        
+        /* ========== WRAPPER ========== */
+        .print-wrapper {
+          background: #1f2937;
+          min-height: 100vh;
+          padding: 2rem 1rem;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 2rem;
+        }
+        
+        /* ========== HIDDEN MEASURE CONTAINER ========== */
+        .content-measure {
+          position: absolute;
+          left: -9999px;
+          top: 0;
+          width: 180mm; /* Lebar konten A4 setelah padding */
+          visibility: hidden;
+          pointer-events: none;
+          
+          /* Styling sama dengan a4-page content */
+          font-family: 'Times New Roman', Times, serif;
+          font-size: 11pt;
+          line-height: 1.5;
+        }
+        
+        /* ========== A4 PAGE ========== */
+        .a4-page {
+          /* Ukuran A4 */
+          width: 210mm;
+          height: 297mm; /* Fixed height untuk setiap halaman */
+          
+          /* Padding/margin kertas */
+          padding: 20mm 15mm;
+          
+          /* Visual */
+          background: white;
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+          
+          /* Typography */
+          font-family: 'Times New Roman', Times, serif;
+          font-size: 11pt;
+          line-height: 1.5;
+          
+          /* Box model */
+          box-sizing: border-box;
+          
+          /* Overflow control */
+          overflow: hidden;
+          position: relative;
+          flex-shrink: 0;
+        }
+        
+        /* Page viewport - clips content to show only current page portion */
+        .page-viewport {
+          width: 100%;
+          overflow: hidden;
+        }
+        
+        /* Page content - can be transformed to show different portions */
+        .page-content {
+          width: 100%;
+        }
+        
+        /* Page number indicator */
+        .page-number {
+          position: absolute;
+          bottom: 8mm;
+          left: 0;
+          right: 0;
+          text-align: center;
+          font-size: 9pt;
+          color: #9ca3af;
+        }
+        
+        /* Print-only content - hidden on screen */
+        .print-content-only {
+          display: none;
+        }
+        
+        /* Kop Surat */
+        .kop-surat {
+          padding-bottom: 12px;
+          margin-bottom: 12px;
+        }
+        
+        /* ========== PRINT STYLES ========== */
         @media print {
+          /* Hapus header/footer browser */
           @page {
-            size: A4;
-            margin: 20mm 15mm;
+            size: A4 portrait;
+            margin: 0;
           }
           
-          body {
-            print-color-adjust: exact;
-            -webkit-print-color-adjust: exact;
+          /* Force warna */
+          * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+            color-adjust: exact !important;
           }
           
+          html, body {
+            width: 210mm;
+            margin: 0 !important;
+            padding: 0 !important;
+            background: white !important;
+          }
+          
+          /* Sembunyikan elemen non-print */
+          .no-print,
           .print\\:hidden {
             display: none !important;
           }
           
-          .a4-paper {
-            width: 100% !important;
-            max-width: none !important;
+          /* Reset wrapper */
+          .print-wrapper {
+            background: white !important;
             padding: 0 !important;
             margin: 0 !important;
-            box-shadow: none !important;
+            display: block !important;
+            gap: 0 !important;
+          }
+          
+          /* Sembunyikan halaman preview multi-page */
+          .a4-page {
+            display: none !important;
+          }
+          
+          /* Sembunyikan measurement container */
+          .content-measure {
+            display: none !important;
+          }
+          
+          /* Tampilkan print-only content dengan styling A4 */
+          .print-content-only {
+            display: block !important;
+            width: 210mm !important;
+            padding: 20mm 15mm !important;
+            margin: 0 !important;
+            background: white !important;
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 11pt;
+            line-height: 1.5;
+          }
+          
+          /* Page break controls */
+          .avoid-break {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+          }
+          
+          h1, h2, h3, h4, h5, h6 {
+            page-break-after: avoid !important;
+            break-after: avoid !important;
+          }
+          
+          img, figure {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+          }
+          
+          .signature-section,
+          .kop-surat {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+          }
+          
+          section {
+            page-break-inside: auto;
+          }
+          
+          p {
+            orphans: 3;
+            widows: 3;
           }
         }
         
-        .a4-paper {
-          width: 210mm;
-          min-height: 297mm;
-          padding: 20mm 15mm;
-          font-family: 'Times New Roman', Times, serif;
-          font-size: 12pt;
-          line-height: 1.5;
-        }
-        
-        @media screen and (max-width: 210mm) {
-          .a4-paper {
+        /* ========== MOBILE ========== */
+        @media screen and (max-width: 800px) {
+          .print-wrapper {
+            padding: 1rem;
+          }
+          
+          .a4-page {
             width: 100%;
             min-height: auto;
             padding: 15mm 10mm;
+            font-size: 10pt;
           }
+        }
+        
+        /* ========== CONTENT STYLES ========== */
+        .rich-text-content p {
+          margin-bottom: 0.5em;
+        }
+        
+        .rich-text-content ul,
+        .rich-text-content ol {
+          margin-left: 1.5em;
+          margin-bottom: 0.5em;
+        }
+        
+        .rich-text-content li {
+          margin-bottom: 0.25em;
+        }
+        
+        /* Dokumentasi grid */
+        .dokumentasi-grid {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 12px;
+          margin-top: 8px;
+        }
+        
+        .dokumentasi-grid figure {
+          break-inside: avoid;
+          page-break-inside: avoid;
+        }
+        
+        .dokumentasi-grid img {
+          width: 100%;
+          height: auto;
+          max-height: 150px;
+          object-fit: contain;
+          background: #f9fafb;
+          border-radius: 4px;
+          border: 1px solid #e5e7eb;
+        }
+        
+        .dokumentasi-grid figcaption {
+          font-size: 9pt;
+          color: #6b7280;
+          text-align: center;
+          margin-top: 4px;
+        }
+        
+        /* Signature */
+        .signature-section {
+          margin-top: 2rem;
+          break-inside: avoid;
+          page-break-inside: avoid;
+        }
+        
+        .signature-box {
+          text-align: center;
+        }
+        
+        .signature-space {
+          height: 60px;
+        }
+        
+        /* Section spacing */
+        .compact-section {
+          margin-bottom: 1em;
         }
       `}</style>
     </>
