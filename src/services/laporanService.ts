@@ -289,14 +289,41 @@ export const submitLaporan = async (data: LaporanType, existingDraftId?: string)
       
       // Jika ada draft ID yang sudah ada, update dokumen tersebut
       if (existingDraftId) {
-        console.log('Updating existing draft:', existingDraftId);
+        console.log('Checking existing draft:', existingDraftId);
         const docRef = doc(db, 'laporan', existingDraftId);
-        await updateDoc(docRef, {
-          ...sanitizedData,
-          status: 'submitted',
-          updatedAt: serverTimestamp(),
-        });
-        docId = existingDraftId;
+        
+        // Cek apakah dokumen masih ada
+        const existingDoc = await getDoc(docRef);
+        
+        if (existingDoc.exists()) {
+          // Dokumen ada, lakukan update
+          console.log('Updating existing draft:', existingDraftId);
+          const existingData = existingDoc.data();
+          const existingTanggal = existingData?.uraianKegiatan?.[0]?.tanggal;
+          
+          // Pertahankan tanggal pelaksanaan dari dokumen yang sudah ada
+          const dataToUpdate = { ...sanitizedData };
+          if (existingTanggal && dataToUpdate.uraianKegiatan && Array.isArray(dataToUpdate.uraianKegiatan)) {
+            (dataToUpdate.uraianKegiatan as Array<Record<string, unknown>>)[0].tanggal = existingTanggal;
+          }
+          
+          await updateDoc(docRef, {
+            ...dataToUpdate,
+            status: 'submitted',
+            updatedAt: serverTimestamp(),
+          });
+          docId = existingDraftId;
+        } else {
+          // Dokumen tidak ada (sudah dihapus), buat baru
+          console.log('Draft not found, creating new document');
+          const newDocRef = await addDoc(collection(db, 'laporan'), {
+            ...sanitizedData,
+            status: 'submitted',
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+          });
+          docId = newDocRef.id;
+        }
       } else {
         // Buat dokumen baru
         const docRef = await addDoc(collection(db, 'laporan'), {
@@ -546,14 +573,41 @@ export const saveDraft = async (data: Partial<LaporanFormInput>): Promise<Servic
       
       // Jika sudah ada draft di Firebase, update dokumen tersebut
       if (existingFirebaseId) {
-        console.log('Updating existing draft:', existingFirebaseId);
+        console.log('Checking existing draft:', existingFirebaseId);
         const docRef = doc(db, 'laporan', existingFirebaseId);
-        await updateDoc(docRef, {
-          ...sanitizedData,
-          status: 'draft',
-          updatedAt: serverTimestamp(),
-        });
-        docId = existingFirebaseId;
+        
+        // Cek apakah dokumen masih ada
+        const existingDoc = await getDoc(docRef);
+        
+        if (existingDoc.exists()) {
+          // Dokumen ada, lakukan update
+          console.log('Updating existing draft:', existingFirebaseId);
+          const existingData = existingDoc.data();
+          const existingTanggal = existingData?.uraianKegiatan?.[0]?.tanggal;
+          
+          // Pertahankan tanggal pelaksanaan dari dokumen yang sudah ada
+          const dataToUpdate = { ...sanitizedData };
+          if (existingTanggal && dataToUpdate.uraianKegiatan && Array.isArray(dataToUpdate.uraianKegiatan)) {
+            (dataToUpdate.uraianKegiatan as Array<Record<string, unknown>>)[0].tanggal = existingTanggal;
+          }
+          
+          await updateDoc(docRef, {
+            ...dataToUpdate,
+            status: 'draft',
+            updatedAt: serverTimestamp(),
+          });
+          docId = existingFirebaseId;
+        } else {
+          // Dokumen tidak ada (sudah dihapus), buat baru
+          console.log('Draft not found, creating new document');
+          const newDocRef = await addDoc(collection(db, 'laporan'), {
+            ...sanitizedData,
+            status: 'draft',
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+          });
+          docId = newDocRef.id;
+        }
       } else {
         // Buat dokumen baru
         const docRef = await addDoc(collection(db, 'laporan'), {

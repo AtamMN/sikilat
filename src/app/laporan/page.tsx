@@ -277,8 +277,11 @@ function LaporanContent() {
   const [contentHeight, setContentHeight] = useState(0);
   const [pagesReady, setPagesReady] = useState(false);
   
-  // A4 content height dalam pixel (257mm = tinggi konten setelah padding)
-  // Menggunakan 96 DPI: 257mm × 3.7795275591 px/mm ≈ 971px
+  // A4 content height dalam pixel
+  // Total A4: 297mm, Padding: 20mm top + 20mm bottom = 40mm
+  // Area konten: 297mm - 40mm = 257mm
+  // Browser 96 DPI: 1mm = 3.7795275591px
+  // 257mm × 3.7795 ≈ 971px
   const A4_CONTENT_HEIGHT_PX = 971;
 
   // Load laporan by ID from URL or from context
@@ -400,6 +403,7 @@ function LaporanContent() {
     // Delay measurement to ensure images are loaded
     const measureContent = () => {
       if (contentRef.current) {
+        // Mengukur tinggi total konten
         const height = contentRef.current.scrollHeight;
         setContentHeight(height);
         setPagesReady(true);
@@ -554,29 +558,31 @@ function LaporanContent() {
         
         {/* Visible multi-page preview */}
         {pagesReady && pageNumbers.map((pageNum) => (
-          <div key={pageNum} className="a4-page">
-            <div 
-              className="page-viewport"
-              style={{
-                height: `${A4_CONTENT_HEIGHT_PX}px`,
-                overflow: 'hidden',
-              }}
-            >
+          <div key={pageNum} className="a4-page-wrapper">
+            <div className="a4-page">
               <div 
-                className="page-content"
+                className="page-viewport"
                 style={{
-                  transform: `translateY(-${pageNum * A4_CONTENT_HEIGHT_PX}px)`,
+                  height: `${A4_CONTENT_HEIGHT_PX}px`,
+                  overflow: 'hidden',
                 }}
               >
-                <LaporanDocumentContent 
-                  laporan={displayLaporan} 
-                  uraianKegiatan={resolvedUraian} 
-                />
+                <div 
+                  className="page-content"
+                  style={{
+                    transform: `translateY(-${pageNum * A4_CONTENT_HEIGHT_PX}px)`,
+                  }}
+                >
+                  <LaporanDocumentContent 
+                    laporan={displayLaporan} 
+                    uraianKegiatan={resolvedUraian} 
+                  />
+                </div>
               </div>
             </div>
             
-            {/* Page number indicator - hidden when printing */}
-            <div className="print:hidden page-number">
+            {/* Page number indicator - di luar halaman */}
+            <div className="print:hidden page-indicator">
               Halaman {pageNum + 1} dari {totalPages}
             </div>
           </div>
@@ -621,18 +627,21 @@ function LaporanContent() {
         }
         
         /* ========== HIDDEN MEASURE CONTAINER ========== */
+        /* Container ini harus memiliki layout yang IDENTIK dengan area konten di dalam .a4-page */
+        /* .a4-page width=210mm, padding=15mm kiri-kanan → konten width = 180mm */
         .content-measure {
           position: absolute;
           left: -9999px;
           top: 0;
-          width: 180mm; /* Lebar konten A4 setelah padding */
+          width: 180mm; /* Sama dengan lebar konten di dalam a4-page */
           visibility: hidden;
           pointer-events: none;
           
-          /* Styling sama dengan a4-page content */
+          /* Styling HARUS sama dengan a4-page content */
           font-family: 'Times New Roman', Times, serif;
           font-size: 11pt;
           line-height: 1.5;
+          background: white;
         }
         
         /* ========== A4 PAGE ========== */
@@ -662,26 +671,33 @@ function LaporanContent() {
           flex-shrink: 0;
         }
         
-        /* Page viewport - clips content to show only current page portion */
+        /* Page viewport - area yang menampilkan konten */
         .page-viewport {
           width: 100%;
           overflow: hidden;
+          /* Height di-set via inline style */
         }
         
-        /* Page content - can be transformed to show different portions */
+        /* Page content - konten yang bisa di-transform untuk pagination */
         .page-content {
-          width: 100%;
+          width: 180mm; /* Sama dengan content-measure */
+          /* Transform di-set via inline style */
         }
         
-        /* Page number indicator */
-        .page-number {
-          position: absolute;
-          bottom: 8mm;
-          left: 0;
-          right: 0;
+        /* A4 Page Wrapper */
+        .a4-page-wrapper {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+        }
+        
+        /* Page number indicator - di luar halaman */
+        .page-indicator {
           text-align: center;
-          font-size: 9pt;
+          font-size: 10pt;
           color: #9ca3af;
+          margin-top: 0.5rem;
+          margin-bottom: 0.5rem;
         }
         
         /* Print-only content - hidden on screen */

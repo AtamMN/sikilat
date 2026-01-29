@@ -34,6 +34,34 @@ function BuatLaporanContent() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingStatus, setEditingStatus] = useState<string | null>(null);
 
+  // Generate tanggal hari ini dalam format DD/MM/YYYY
+  const getTodayDate = () => {
+    const today = new Date();
+    const day = String(today.getDate()).padStart(2, '0');
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const year = String(today.getFullYear());
+    return `${day}/${month}/${year}`;
+  };
+
+  // Konversi tanggal dari berbagai format ke DD/MM/YYYY
+  const formatToDisplayDate = (dateString: string): string => {
+    if (!dateString) return getTodayDate();
+    
+    // Jika sudah dalam format DD/MM/YYYY, kembalikan langsung
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateString)) {
+      return dateString;
+    }
+    
+    // Parse tanggal dari berbagai format
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return getTodayDate();
+    
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = String(date.getFullYear());
+    return `${day}/${month}/${year}`;
+  };
+
   const {
     register,
     handleSubmit,
@@ -45,7 +73,7 @@ function BuatLaporanContent() {
   } = useForm<LaporanFormInput>({
     defaultValues: {
       namaKegiatan: '',
-      tanggal: '',
+      tanggal: getTodayDate(), // Set tanggal default ke hari ini
       waktuMulai: '',
       waktuSelesai: '',
       lokasi: '',
@@ -80,7 +108,7 @@ function BuatLaporanContent() {
           
           // Populate form with draft data
           setValue('namaKegiatan', draft.namaKegiatan || '');
-          setValue('tanggal', draft.uraianKegiatan?.[0]?.tanggal || '');
+          setValue('tanggal', formatToDisplayDate(draft.uraianKegiatan?.[0]?.tanggal || ''));
           setValue('waktuMulai', draft.waktuMulai || '');
           setValue('waktuSelesai', draft.waktuSelesai || '');
           setValue('lokasi', draft.tempatPelaksanaan || '');
@@ -281,10 +309,11 @@ function BuatLaporanContent() {
               <FormInput
                 label="Tanggal Pelaksanaan"
                 name="tanggal"
-                type="date"
+                type="text"
                 required
                 register={register}
                 error={errors.tanggal}
+                disabled={true}
               />
               <FormInput
                 label="Lokasi/Tempat"
