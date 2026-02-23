@@ -99,10 +99,14 @@ body {
 @media print {
   @page {
     size: A4;
-    margin: 20mm 15mm;
+    margin: 0; /* Remove browser headers/footers */
   }
   
-  body {
+  html, body {
+    width: 210mm;
+    height: 297mm;
+    margin: 0;
+    padding: 0;
     background: white !important;
     print-color-adjust: exact;
     -webkit-print-color-adjust: exact;
@@ -111,6 +115,51 @@ body {
   .no-print,
   [class*="print:hidden"] {
     display: none !important;
+  }
+  
+  /* Print area visibility control (used by the Buat Surat page) */
+  body * {
+    visibility: hidden;
+  }
+  .print-area, .print-area * {
+    visibility: visible;
+  }
+  .print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 210mm;
+    min-height: 297mm;
+    padding: 0;
+    margin: 0;
+  }
+  
+  /* Override LetterPreview container styles for print */
+  .print-area > div {
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+  
+  /* Hide the preview header bar in print */
+  .print-area .bg-gray-800 {
+    display: none !important;
+  }
+  
+  /* Reset the preview container padding for print */
+  .print-area .bg-gray-100 {
+    background: white !important;
+    padding: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+  
+  /* The actual A4 paper in LetterPreview */
+  .print-area .bg-white.mx-auto.shadow-md {
+    width: 210mm !important;
+    min-height: 297mm !important;
+    padding: 20mm 15mm !important;
+    margin: 0 !important;
+    box-shadow: none !important;
   }
   
   /* A4 Paper Reset for Print */

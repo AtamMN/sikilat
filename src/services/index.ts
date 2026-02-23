@@ -7,3 +7,4 @@
 
 export * from './laporanService';
 export * from './imageService';
+export * from './docxGenerator';
