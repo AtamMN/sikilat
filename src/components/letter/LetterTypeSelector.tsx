@@ -45,7 +45,7 @@ export const LetterTypeSelector: React.FC<LetterTypeSelectorProps> = ({
   
   return (
     <div className="w-full" ref={dropdownRef}>
-      <label className="block text-sm font-medium text-gray-700 mb-2">
+      <label className="block text-sm font-semibold text-gray-700 mb-2">
         Pilih Jenis Surat
       </label>
       
@@ -56,14 +56,14 @@ export const LetterTypeSelector: React.FC<LetterTypeSelectorProps> = ({
           onClick={() => !disabled && setIsOpen(!isOpen)}
           disabled={disabled}
           className={`
-            w-full px-4 py-3 text-left bg-white border rounded-lg shadow-sm
+            w-full px-4 py-3.5 text-left bg-white border-2 rounded-xl shadow-sm
             flex items-center justify-between gap-3
             transition-all duration-200
             ${disabled 
               ? 'bg-gray-100 cursor-not-allowed opacity-60' 
-              : 'hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
+              : 'hover:border-indigo-300 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500'
             }
-            ${isOpen ? 'border-blue-500 ring-2 ring-blue-500' : 'border-gray-300'}
+            ${isOpen ? 'border-indigo-500 ring-2 ring-indigo-500' : 'border-gray-200'}
           `}
         >
           <div className="flex items-center gap-3 min-w-0">
@@ -97,7 +97,7 @@ export const LetterTypeSelector: React.FC<LetterTypeSelectorProps> = ({
         
         {/* Dropdown Menu */}
         {isOpen && (
-          <div className="absolute z-50 w-full mt-2 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+          <div className="absolute z-50 w-full mt-2 bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
             <div className="max-h-80 overflow-y-auto">
               {LETTER_TYPE_OPTIONS.map((option) => (
                 <button
@@ -105,17 +105,17 @@ export const LetterTypeSelector: React.FC<LetterTypeSelectorProps> = ({
                   type="button"
                   onClick={() => handleSelect(option.value)}
                   className={`
-                    w-full px-4 py-3 text-left flex items-center gap-3
+                    w-full px-4 py-3.5 text-left flex items-center gap-3
                     transition-colors duration-150
                     ${value === option.value 
-                      ? 'bg-blue-50 border-l-4 border-blue-500' 
+                      ? 'bg-indigo-50 border-l-4 border-indigo-500' 
                       : 'hover:bg-gray-50 border-l-4 border-transparent'
                     }
                   `}
                 >
                   <span className="text-2xl flex-shrink-0">{option.icon}</span>
                   <div className="min-w-0 flex-1">
-                    <p className={`font-medium truncate ${value === option.value ? 'text-blue-700' : 'text-gray-900'}`}>
+                    <p className={`font-semibold truncate ${value === option.value ? 'text-indigo-700' : 'text-gray-900'}`}>
                       {option.label}
                     </p>
                     <p className="text-sm text-gray-500 truncate">
@@ -123,7 +123,7 @@ export const LetterTypeSelector: React.FC<LetterTypeSelectorProps> = ({
                     </p>
                   </div>
                   {value === option.value && (
-                    <svg className="w-5 h-5 text-blue-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <svg className="w-5 h-5 text-indigo-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                     </svg>
                   )}

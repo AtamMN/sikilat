@@ -44,7 +44,7 @@ const InputField: React.FC<InputFieldProps> = ({
   required = false,
   rows = 3
 }) => {
-  const baseClasses = "w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors";
+  const baseClasses = "w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors";
   
   return (
     <div className="space-y-1">
@@ -91,9 +91,9 @@ const SuratUndanganForm: React.FC<SuratUndanganFormProps> = ({ data, onChange })
   return (
     <div className="space-y-6">
       {/* Section: Header Surat */}
-      <div className="bg-gray-50 p-4 rounded-lg">
+      <div className="bg-gray-50 p-4 rounded-xl">
         <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-          <span className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm">1</span>
+          <span className="w-6 h-6 bg-indigo-600 text-white rounded-full flex items-center justify-center text-sm">1</span>
           Header Surat
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -123,9 +123,9 @@ const SuratUndanganForm: React.FC<SuratUndanganFormProps> = ({ data, onChange })
       </div>
       
       {/* Section: Tujuan */}
-      <div className="bg-gray-50 p-4 rounded-lg">
+      <div className="bg-gray-50 p-4 rounded-xl">
         <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-          <span className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm">2</span>
+          <span className="w-6 h-6 bg-indigo-600 text-white rounded-full flex items-center justify-center text-sm">2</span>
           Tujuan Surat
         </h3>
         <div className="grid grid-cols-1 gap-4">
@@ -152,9 +152,9 @@ const SuratUndanganForm: React.FC<SuratUndanganFormProps> = ({ data, onChange })
       </div>
       
       {/* Section: Detail Acara */}
-      <div className="bg-gray-50 p-4 rounded-lg">
+      <div className="bg-gray-50 p-4 rounded-xl">
         <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-          <span className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm">3</span>
+          <span className="w-6 h-6 bg-indigo-600 text-white rounded-full flex items-center justify-center text-sm">3</span>
           Detail Acara
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -199,9 +199,9 @@ const SuratUndanganForm: React.FC<SuratUndanganFormProps> = ({ data, onChange })
       </div>
       
       {/* Section: Konten */}
-      <div className="bg-gray-50 p-4 rounded-lg">
+      <div className="bg-gray-50 p-4 rounded-xl">
         <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-          <span className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm">4</span>
+          <span className="w-6 h-6 bg-indigo-600 text-white rounded-full flex items-center justify-center text-sm">4</span>
           Konten Surat
         </h3>
         <div className="space-y-4">
@@ -223,9 +223,9 @@ const SuratUndanganForm: React.FC<SuratUndanganFormProps> = ({ data, onChange })
       </div>
       
       {/* Section: Penandatangan */}
-      <div className="bg-gray-50 p-4 rounded-lg">
+      <div className="bg-gray-50 p-4 rounded-xl">
         <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-          <span className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm">5</span>
+          <span className="w-6 h-6 bg-indigo-600 text-white rounded-full flex items-center justify-center text-sm">5</span>
           Penandatangan
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -318,9 +318,9 @@ const SuratTugasForm: React.FC<SuratTugasFormProps> = ({ data, onChange }) => {
   return (
     <div className="space-y-6">
       {/* Section: Header */}
-      <div className="bg-gray-50 p-4 rounded-lg">
+      <div className="bg-gray-50 p-4 rounded-xl">
         <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-          <span className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm">1</span>
+          <span className="w-6 h-6 bg-indigo-600 text-white rounded-full flex items-center justify-center text-sm">1</span>
           Header Surat
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -341,9 +341,9 @@ const SuratTugasForm: React.FC<SuratTugasFormProps> = ({ data, onChange }) => {
       </div>
       
       {/* Section: Dasar Hukum */}
-      <div className="bg-gray-50 p-4 rounded-lg">
+      <div className="bg-gray-50 p-4 rounded-xl">
         <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-          <span className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm">2</span>
+          <span className="w-6 h-6 bg-indigo-600 text-white rounded-full flex items-center justify-center text-sm">2</span>
           Dasar Hukum
         </h3>
         <div className="space-y-3">
@@ -361,7 +361,7 @@ const SuratTugasForm: React.FC<SuratTugasFormProps> = ({ data, onChange }) => {
                 <button
                   type="button"
                   onClick={() => removeDasarHukum(index)}
-                  className="mt-6 px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                  className="mt-6 px-3 py-2 text-red-600 hover:bg-red-50 rounded-xl transition-colors"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -373,7 +373,7 @@ const SuratTugasForm: React.FC<SuratTugasFormProps> = ({ data, onChange }) => {
           <button
             type="button"
             onClick={addDasarHukum}
-            className="w-full py-2 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-blue-400 hover:text-blue-600 transition-colors"
+            className="w-full py-2 border-2 border-dashed border-gray-300 rounded-xl text-gray-600 hover:border-indigo-400 hover:text-indigo-600 transition-colors"
           >
             + Tambah Dasar Hukum
           </button>
@@ -381,14 +381,14 @@ const SuratTugasForm: React.FC<SuratTugasFormProps> = ({ data, onChange }) => {
       </div>
       
       {/* Section: Daftar Pegawai */}
-      <div className="bg-gray-50 p-4 rounded-lg">
+      <div className="bg-gray-50 p-4 rounded-xl">
         <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-          <span className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm">3</span>
+          <span className="w-6 h-6 bg-indigo-600 text-white rounded-full flex items-center justify-center text-sm">3</span>
           Daftar Pegawai yang Ditugaskan
         </h3>
         <div className="space-y-4">
           {(data.daftarPegawai || []).map((pegawai, index) => (
-            <div key={index} className="bg-white p-4 rounded-lg border border-gray-200">
+            <div key={index} className="bg-white p-4 rounded-xl border border-gray-200">
               <div className="flex justify-between items-center mb-3">
                 <span className="font-medium text-gray-700">Pegawai {index + 1}</span>
                 {(data.daftarPegawai?.length || 0) > 1 && (
@@ -429,7 +429,7 @@ const SuratTugasForm: React.FC<SuratTugasFormProps> = ({ data, onChange }) => {
           <button
             type="button"
             onClick={addPegawai}
-            className="w-full py-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-blue-400 hover:text-blue-600 transition-colors flex items-center justify-center gap-2"
+            className="w-full py-3 border-2 border-dashed border-gray-300 rounded-xl text-gray-600 hover:border-indigo-400 hover:text-indigo-600 transition-colors flex items-center justify-center gap-2"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
@@ -440,9 +440,9 @@ const SuratTugasForm: React.FC<SuratTugasFormProps> = ({ data, onChange }) => {
       </div>
       
       {/* Section: Detail Tugas */}
-      <div className="bg-gray-50 p-4 rounded-lg">
+      <div className="bg-gray-50 p-4 rounded-xl">
         <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-          <span className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm">4</span>
+          <span className="w-6 h-6 bg-indigo-600 text-white rounded-full flex items-center justify-center text-sm">4</span>
           Detail Tugas
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -486,9 +486,9 @@ const SuratTugasForm: React.FC<SuratTugasFormProps> = ({ data, onChange }) => {
       </div>
       
       {/* Section: Penandatangan */}
-      <div className="bg-gray-50 p-4 rounded-lg">
+      <div className="bg-gray-50 p-4 rounded-xl">
         <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-          <span className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm">5</span>
+          <span className="w-6 h-6 bg-indigo-600 text-white rounded-full flex items-center justify-center text-sm">5</span>
           Penandatangan
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -560,7 +560,7 @@ const SpkLemburForm: React.FC<SpkLemburFormProps> = ({ data, onChange }) => {
   return (
     <div className="space-y-6">
       {/* Section: Header */}
-      <div className="bg-amber-50 p-4 rounded-lg border border-amber-200">
+      <div className="bg-amber-50 p-4 rounded-xl border border-amber-200">
         <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
           <span className="w-6 h-6 bg-amber-500 text-white rounded-full flex items-center justify-center text-sm">1</span>
           Header SPK Lembur
@@ -583,14 +583,14 @@ const SpkLemburForm: React.FC<SpkLemburFormProps> = ({ data, onChange }) => {
       </div>
       
       {/* Section: Daftar Pegawai Lembur */}
-      <div className="bg-amber-50 p-4 rounded-lg border border-amber-200">
+      <div className="bg-amber-50 p-4 rounded-xl border border-amber-200">
         <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
           <span className="w-6 h-6 bg-amber-500 text-white rounded-full flex items-center justify-center text-sm">2</span>
           Daftar Pegawai Lembur
         </h3>
         <div className="space-y-4">
           {(data.daftarPegawai || []).map((pegawai, index) => (
-            <div key={index} className="bg-white p-4 rounded-lg border border-amber-300">
+            <div key={index} className="bg-white p-4 rounded-xl border border-amber-300">
               <div className="flex justify-between items-center mb-3">
                 <span className="font-medium text-gray-700">Pegawai {index + 1}</span>
                 {(data.daftarPegawai?.length || 0) > 1 && (
@@ -662,7 +662,7 @@ const SpkLemburForm: React.FC<SpkLemburFormProps> = ({ data, onChange }) => {
           <button
             type="button"
             onClick={addPegawai}
-            className="w-full py-3 border-2 border-dashed border-amber-400 rounded-lg text-amber-700 hover:border-amber-500 hover:bg-amber-50 transition-colors flex items-center justify-center gap-2"
+            className="w-full py-3 border-2 border-dashed border-amber-400 rounded-xl text-amber-700 hover:border-amber-500 hover:bg-amber-50 transition-colors flex items-center justify-center gap-2"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -673,7 +673,7 @@ const SpkLemburForm: React.FC<SpkLemburFormProps> = ({ data, onChange }) => {
       </div>
       
       {/* Section: Penandatangan */}
-      <div className="bg-amber-50 p-4 rounded-lg border border-amber-200">
+      <div className="bg-amber-50 p-4 rounded-xl border border-amber-200">
         <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
           <span className="w-6 h-6 bg-amber-500 text-white rounded-full flex items-center justify-center text-sm">3</span>
           Penandatangan
@@ -721,7 +721,7 @@ const LaporanRBDForm: React.FC<LaporanRBDFormProps> = ({ data, onChange }) => {
   return (
     <div className="space-y-6">
       {/* Section: Surat Pengantar */}
-      <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+      <div className="bg-purple-50 p-4 rounded-xl border border-purple-200">
         <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
           <span className="w-6 h-6 bg-purple-500 text-white rounded-full flex items-center justify-center text-sm">1</span>
           Surat Pengantar
@@ -753,7 +753,7 @@ const LaporanRBDForm: React.FC<LaporanRBDFormProps> = ({ data, onChange }) => {
       </div>
       
       {/* Section: Tujuan */}
-      <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+      <div className="bg-purple-50 p-4 rounded-xl border border-purple-200">
         <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
           <span className="w-6 h-6 bg-purple-500 text-white rounded-full flex items-center justify-center text-sm">2</span>
           Tujuan
@@ -774,7 +774,7 @@ const LaporanRBDForm: React.FC<LaporanRBDFormProps> = ({ data, onChange }) => {
       </div>
       
       {/* Section: Konten */}
-      <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+      <div className="bg-purple-50 p-4 rounded-xl border border-purple-200">
         <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
           <span className="w-6 h-6 bg-purple-500 text-white rounded-full flex items-center justify-center text-sm">3</span>
           Konten Pengantar
@@ -790,7 +790,7 @@ const LaporanRBDForm: React.FC<LaporanRBDFormProps> = ({ data, onChange }) => {
       </div>
       
       {/* Section: Penandatangan */}
-      <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+      <div className="bg-purple-50 p-4 rounded-xl border border-purple-200">
         <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
           <span className="w-6 h-6 bg-purple-500 text-white rounded-full flex items-center justify-center text-sm">4</span>
           Penandatangan
@@ -818,7 +818,7 @@ const LaporanRBDForm: React.FC<LaporanRBDFormProps> = ({ data, onChange }) => {
       </div>
       
       {/* Info Lampiran */}
-      <div className="bg-purple-100 p-4 rounded-lg border border-purple-300">
+      <div className="bg-purple-100 p-4 rounded-xl border border-purple-300">
         <div className="flex items-start gap-3">
           <span className="text-2xl">📎</span>
           <div>
