@@ -263,12 +263,10 @@ export default function BuatSuratPage() {
               {/* Preview Section */}
               {showPreview && (
                 <div className="lg:sticky lg:top-6 lg:self-start">
-                  <div className="print-area" ref={printRef}>
-                    <LetterPreview
-                      selectedType={selectedType}
-                      data={formData}
-                    />
-                  </div>
+                  <LetterPreview
+                    selectedType={selectedType}
+                    data={formData}
+                  />
                 </div>
               )}
             </div>
@@ -304,10 +302,21 @@ export default function BuatSuratPage() {
         {/* Footer */}
         <footer className="bg-white border-t mt-8 py-4 no-print">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-sm text-gray-500">
-            <p>SIKILAT © 2025 - Balai Bahasa Provinsi Jawa Barat</p>
+            <p>SIKILAT © 2026 - Balai Bahasa Provinsi Jawa Barat</p>
           </div>
         </footer>
       </main>
+      
+      {/* Print Area - Rendered outside main content flow for printing */}
+      {selectedType && (
+        <div className="print-area" ref={printRef}>
+          <LetterPreview
+            selectedType={selectedType}
+            data={formData}
+            forPrint={true}
+          />
+        </div>
+      )}
     </>
   );
 }

@@ -46,31 +46,20 @@ const formatHari = (dateString: string): string => {
 };
 
 // ==================== KOP SURAT COMPONENT ====================
+// KOP full image - /assets/kop-sikilat.png (1661x239 px, ratio 6.95:1)
 
 const KopSurat: React.FC = () => (
-  <header className="kop-surat mb-4">
-    <div className="flex items-center gap-0">
-      <div className="flex-shrink-0 pr-4">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img 
-          src="/assets/2. Logo Jenama_sekunder.png" 
-          alt="Logo Kemendikdasmen" 
-          className="h-16 w-auto"
-        />
-      </div>
-      <div className="w-[2px] h-16 bg-[#297bbf] flex-shrink-0" />
-      <div className="pl-4 flex-1">
-        <h1 className="text-[11pt] font-bold text-[#297bbf]" style={{ fontFamily: 'Montserrat, sans-serif' }}>
-          Balai Bahasa Provinsi Jawa Barat
-        </h1>
-        <div className="text-[7pt] text-black mt-1 space-y-0" style={{ fontFamily: 'Montserrat, sans-serif', fontWeight: 500 }}>
-          <p>Jalan Sumbawa Nomor 11 Bandung 40113</p>
-          <p>www.balaibahasajabar.kemdikdasmen.go.id</p>
-          <p>☎ 177 | (022) 7271083</p>
-        </div>
-      </div>
-    </div>
-    <hr className="border-gray-400 mt-3" />
+  <header className="kop-surat mb-6">
+    {/* eslint-disable-next-line @next/next/no-img-element */}
+    <img 
+      src="/assets/kop-sikilat.png" 
+      alt="Kop Surat Balai Bahasa Provinsi Jawa Barat" 
+      style={{ 
+        width: '100%', 
+        height: 'auto',
+        display: 'block'
+      }}
+    />
   </header>
 );
 
@@ -151,13 +140,12 @@ const SuratUndanganPreview: React.FC<SuratUndanganPreviewProps> = ({ data }) => 
         </p>
       </div>
       
-      {/* Tanda Tangan */}
+      {/* Tanda Tangan - Per Permendikdasmen: jabatan dengan koma, nama tanpa garis bawah, tanpa NIP */}
       <div className="flex justify-end">
         <div className="text-center">
-          <p>{data.penandatangan?.jabatan || 'Kepala Balai Bahasa Provinsi Jawa Barat'}</p>
-          <div className="h-16"></div>
-          <p className="font-semibold underline">{data.penandatangan?.nama || '_________________'}</p>
-          <p>NIP. {data.penandatangan?.nip || '_________________'}</p>
+          <p>{(data.penandatangan?.jabatan || 'Kepala Balai Bahasa Provinsi Jawa Barat')},</p>
+          <div className="h-20"></div>
+          <p className="font-semibold">{data.penandatangan?.nama || '_________________'}</p>
         </div>
       </div>
     </div>
@@ -254,15 +242,14 @@ const SuratTugasPreview: React.FC<SuratTugasPreviewProps> = ({ data }) => {
         </table>
       </div>
       
-      {/* Tanda Tangan */}
+      {/* Tanda Tangan - Per Permendikdasmen */}
       <div className="flex justify-between mt-8">
         <div></div>
         <div className="text-center">
           <p>{data.tempatSurat || 'Bandung'}, {formatTanggal(data.tanggalSurat || '')}</p>
-          <p>{data.penandatangan?.jabatan || 'Kepala Balai Bahasa Provinsi Jawa Barat'}</p>
-          <div className="h-16"></div>
-          <p className="font-semibold underline">{data.penandatangan?.nama || '_________________'}</p>
-          <p>NIP. {data.penandatangan?.nip || '_________________'}</p>
+          <p>{(data.penandatangan?.jabatan || 'Kepala Balai Bahasa Provinsi Jawa Barat')},</p>
+          <div className="h-20"></div>
+          <p className="font-semibold">{data.penandatangan?.nama || '_________________'}</p>
         </div>
       </div>
     </div>
@@ -330,15 +317,14 @@ const SpkLemburPreview: React.FC<SpkLemburPreviewProps> = ({ data }) => {
         <p className="mb-6">Keterangan: {data.keterangan}</p>
       )}
       
-      {/* Tanda Tangan */}
+      {/* Tanda Tangan - Per Permendikdasmen */}
       <div className="flex justify-between mt-8">
         <div></div>
         <div className="text-center">
           <p>{data.tempatSurat || 'Bandung'}, {formatTanggal(data.tanggalSurat || '')}</p>
-          <p>{data.penandatangan?.jabatan || 'Kepala Balai Bahasa Provinsi Jawa Barat'}</p>
-          <div className="h-16"></div>
-          <p className="font-semibold underline">{data.penandatangan?.nama || '_________________'}</p>
-          <p>NIP. {data.penandatangan?.nip || '_________________'}</p>
+          <p>{(data.penandatangan?.jabatan || 'Kepala Balai Bahasa Provinsi Jawa Barat')},</p>
+          <div className="h-20"></div>
+          <p className="font-semibold">{data.penandatangan?.nama || '_________________'}</p>
         </div>
       </div>
     </div>
@@ -390,13 +376,12 @@ const LaporanRBDPreview: React.FC<LaporanRBDPreviewProps> = ({ data }) => {
         </p>
       </div>
       
-      {/* Tanda Tangan */}
+      {/* Tanda Tangan - Per Permendikdasmen */}
       <div className="flex justify-end">
         <div className="text-center">
-          <p>{data.penandatangan?.jabatan || 'Kepala Balai Bahasa Provinsi Jawa Barat'}</p>
-          <div className="h-16"></div>
-          <p className="font-semibold underline">{data.penandatangan?.nama || '_________________'}</p>
-          <p>NIP. {data.penandatangan?.nip || '_________________'}</p>
+          <p>{(data.penandatangan?.jabatan || 'Kepala Balai Bahasa Provinsi Jawa Barat')},</p>
+          <div className="h-20"></div>
+          <p className="font-semibold">{data.penandatangan?.nama || '_________________'}</p>
         </div>
       </div>
     </div>
@@ -408,11 +393,13 @@ const LaporanRBDPreview: React.FC<LaporanRBDPreviewProps> = ({ data }) => {
 interface LetterPreviewProps {
   selectedType: LetterType | null;
   data: Partial<LetterData>;
+  forPrint?: boolean;
 }
 
 export const LetterPreview: React.FC<LetterPreviewProps> = ({
   selectedType,
-  data
+  data,
+  forPrint = false
 }) => {
   if (!selectedType) {
     return (
@@ -428,27 +415,59 @@ export const LetterPreview: React.FC<LetterPreviewProps> = ({
     );
   }
   
+  // A4 Paper styles - KOP document
+  // Margins: Top 0.74cm, Bottom 0.49cm, Left 1.25cm, Right 0.75cm
+  // Font: Arial 12pt for correspondence
+  const a4Styles: React.CSSProperties = {
+    width: '210mm',
+    minHeight: '297mm',
+    paddingTop: '7.4mm',    // 0.74cm top margin
+    paddingBottom: '4.9mm', // 0.49cm bottom margin  
+    paddingLeft: '12.5mm',  // 1.25cm left margin
+    paddingRight: '7.5mm',  // 0.75cm right margin
+    fontFamily: 'Arial, sans-serif',
+    fontSize: '12pt',
+    lineHeight: 1.5,
+    boxSizing: 'border-box',
+    backgroundColor: 'white',
+  };
+  
+  // For print-only rendering (hidden on screen, visible when printing)
+  if (forPrint) {
+    return (
+      <div 
+        className="a4-print-content"
+        style={a4Styles}
+      >
+        {selectedType === 'undangan' && (
+          <SuratUndanganPreview data={data as Partial<SuratUndanganData>} />
+        )}
+        {selectedType === 'surat_tugas' && (
+          <SuratTugasPreview data={data as Partial<SuratTugasData>} />
+        )}
+        {selectedType === 'spk_lembur' && (
+          <SpkLemburPreview data={data as Partial<SpkLemburData>} />
+        )}
+        {selectedType === 'laporan_rbd' && (
+          <LaporanRBDPreview data={data as Partial<LaporanRBDData>} />
+        )}
+      </div>
+    );
+  }
+  
   return (
-    <div className="bg-white shadow-lg rounded-lg overflow-hidden print:shadow-none print:rounded-none">
-      {/* Preview Header - Hidden in print */}
-      <div className="bg-gray-800 text-white px-4 py-2 flex items-center justify-between no-print">
+    <div className="bg-white shadow-lg rounded-lg overflow-hidden">
+      {/* Preview Header */}
+      <div className="bg-gray-800 text-white px-4 py-2 flex items-center justify-between">
         <span className="text-sm font-medium">📄 Preview Surat</span>
-        <span className="text-xs text-gray-400">A4 Format • Real-time</span>
+        <span className="text-xs text-gray-400">A4 Format • Permendikdasmen 2026</span>
       </div>
       
       {/* A4 Paper */}
-      <div className="p-4 bg-gray-100 max-h-[80vh] overflow-auto print:p-0 print:bg-white print:max-h-none print:overflow-visible">
+      <div className="p-4 bg-gray-100 max-h-[80vh] overflow-auto">
         <div 
-          className="bg-white mx-auto shadow-md print:shadow-none print:m-0"
-          style={{
-            width: '210mm',
-            minHeight: '297mm',
-            padding: '20mm 15mm',
-            fontFamily: "'Times New Roman', Times, serif",
-            fontSize: '11pt',
-            lineHeight: 1.5,
-            boxSizing: 'border-box'
-          }}
+          className="bg-white mx-auto shadow-md"
+          style={a4Styles}
         >
           {selectedType === 'undangan' && (
             <SuratUndanganPreview data={data as Partial<SuratUndanganData>} />

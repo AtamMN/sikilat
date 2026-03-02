@@ -63,32 +63,19 @@ interface LaporanContentProps {
 const LaporanDocumentContent: React.FC<LaporanContentProps> = ({ laporan, uraianKegiatan }) => {
   return (
     <>
-      {/* Kop Surat - Kemendikdasmen 2026 */}
-      <header className="kop-surat">
-        <div className="flex items-center gap-0">
-          <div className="flex-shrink-0 pr-4">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img 
-              src="/assets/2. Logo Jenama_sekunder.png" 
-              alt="Logo Kemendikdasmen" 
-              className="h-16 w-auto"
-            />
-          </div>
-          <div className="w-[2px] h-16 bg-[#297bbf] flex-shrink-0" />
-          <div className="pl-4 flex-1">
-            <h1 className="text-[11pt] font-bold text-[#297bbf]" style={{ fontFamily: 'Montserrat, sans-serif' }}>
-              Balai Bahasa Provinsi Jawa Barat
-            </h1>
-            <div className="text-[7pt] text-black mt-1 space-y-0" style={{ fontFamily: 'Montserrat, sans-serif', fontWeight: 500 }}>
-              <p>Jalan Sumbawa Nomor 11 Bandung 40113</p>
-              <p>www.balaibahasajabar.kemdikdasmen.go.id</p>
-              <p>☎ 177 | (022) 7271083</p>
-            </div>
-          </div>
-        </div>
+      {/* Kop Surat - Full Image */}
+      <header className="kop-surat mb-4">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img 
+          src="/assets/kop-sikilat.png" 
+          alt="Kop Surat Balai Bahasa Provinsi Jawa Barat" 
+          style={{ 
+            width: '100%', 
+            height: 'auto',
+            display: 'block'
+          }}
+        />
       </header>
-      
-      <hr className="border-gray-300 mb-4" />
 
       {/* Judul Laporan */}
       <div className="text-center mb-4">
@@ -278,11 +265,11 @@ function LaporanContent() {
   const [pagesReady, setPagesReady] = useState(false);
   
   // A4 content height dalam pixel
-  // Total A4: 297mm, Padding: 20mm top + 20mm bottom = 40mm
-  // Area konten: 297mm - 40mm = 257mm
+  // Total A4: 297mm, Padding: 7.4mm top + 4.9mm bottom = 12.3mm
+  // Area konten: 297mm - 12.3mm = 284.7mm
   // Browser 96 DPI: 1mm = 3.7795275591px
-  // 257mm × 3.7795 ≈ 971px
-  const A4_CONTENT_HEIGHT_PX = 971;
+  // 284.7mm × 3.7795 ≈ 1076px
+  const A4_CONTENT_HEIGHT_PX = 1076;
 
   // Load laporan by ID from URL or from context
   useEffect(() => {
@@ -628,12 +615,12 @@ function LaporanContent() {
         
         /* ========== HIDDEN MEASURE CONTAINER ========== */
         /* Container ini harus memiliki layout yang IDENTIK dengan area konten di dalam .a4-page */
-        /* .a4-page width=210mm, padding=15mm kiri-kanan → konten width = 180mm */
+        /* .a4-page width=210mm, padding=12.5mm kiri + 7.5mm kanan → konten width = 190mm */
         .content-measure {
           position: absolute;
           left: -9999px;
           top: 0;
-          width: 180mm; /* Sama dengan lebar konten di dalam a4-page */
+          width: 190mm; /* Sama dengan lebar konten di dalam a4-page */
           visibility: hidden;
           pointer-events: none;
           
@@ -650,8 +637,8 @@ function LaporanContent() {
           width: 210mm;
           height: 297mm; /* Fixed height untuk setiap halaman */
           
-          /* Padding/margin kertas */
-          padding: 20mm 15mm;
+          /* Padding/margin kertas: Top 0.74cm, Bottom 0.49cm, Left 1.25cm, Right 0.75cm */
+          padding: 7.4mm 7.5mm 4.9mm 12.5mm;
           
           /* Visual */
           background: white;
@@ -680,7 +667,7 @@ function LaporanContent() {
         
         /* Page content - konten yang bisa di-transform untuk pagination */
         .page-content {
-          width: 180mm; /* Sama dengan content-measure */
+          width: 190mm; /* Sama dengan content-measure */
           /* Transform di-set via inline style */
         }
         
@@ -762,7 +749,7 @@ function LaporanContent() {
           .print-content-only {
             display: block !important;
             width: 210mm !important;
-            padding: 20mm 15mm !important;
+            padding: 7.4mm 7.5mm 4.9mm 12.5mm !important;
             margin: 0 !important;
             background: white !important;
             font-family: 'Times New Roman', Times, serif;

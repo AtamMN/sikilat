@@ -9,12 +9,13 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { getAllLaporan } from '@/services/laporanService';
+import { getAllLaporan, getLaporanById, updateLaporan } from '@/services/laporanService';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { isRealtimeDbImage, resolveImageUrl } from '@/lib/realtimeDbImages';
 
 interface GalleryImage {
   src: string;
+  originalSrc: string; // Original URL/path for deletion
   laporanId: string;
   namaKegiatan: string;
   tanggal: string;
@@ -27,6 +28,8 @@ export default function GaleriPage() {
   const [selectedImage, setSelectedImage] = useState<GalleryImage | null>(null);
   const [filter, setFilter] = useState<string>('all');
   const [kegiatanList, setKegiatanList] = useState<string[]>([]);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState<GalleryImage | null>(null);
 
   useEffect(() => {
     const loadImages = async () => {
@@ -62,6 +65,7 @@ export default function GaleriPage() {
 
                     allImages.push({
                       src: imageSrc,
+                      originalSrc: gambar, // Keep original for deletion
                       laporanId: laporan.id || '',
                       namaKegiatan: laporan.namaKegiatan,
                       tanggal: uraian.tanggal,
@@ -98,6 +102,60 @@ export default function GaleriPage() {
       month: 'long',
       year: 'numeric',
     });
+  };
+
+  // Delete image from laporan
+  const handleDeleteImage = async (image: GalleryImage) => {
+    if (!image.laporanId) {
+      alert('Tidak dapat menghapus gambar: ID laporan tidak ditemukan');
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      // Get the full laporan
+      const result = await getLaporanById(image.laporanId);
+      if (!result.success || !result.data) {
+        throw new Error('Laporan tidak ditemukan');
+      }
+
+      const laporan = result.data;
+      
+      // Find and update the uraianKegiatan that contains this image
+      const updatedUraian = laporan.uraianKegiatan?.map(uraian => {
+        if (uraian.hari === image.hari && uraian.tanggal === image.tanggal) {
+          // Remove the image from this uraian's gambar array
+          return {
+            ...uraian,
+            gambar: uraian.gambar?.filter(g => g !== image.originalSrc) || []
+          };
+        }
+        return uraian;
+      });
+
+      // Update the laporan
+      const updateResult = await updateLaporan(image.laporanId, {
+        uraianKegiatan: updatedUraian
+      });
+
+      if (updateResult.success) {
+        // Remove from local state
+        setImages(prev => prev.filter(img => 
+          !(img.laporanId === image.laporanId && 
+            img.originalSrc === image.originalSrc && 
+            img.hari === image.hari)
+        ));
+        setSelectedImage(null);
+        setDeleteConfirm(null);
+      } else {
+        throw new Error(updateResult.error || 'Gagal menghapus gambar');
+      }
+    } catch (error) {
+      console.error('Delete error:', error);
+      alert(`Gagal menghapus gambar: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   if (isLoading) {
@@ -195,6 +253,19 @@ export default function GaleriPage() {
                     <p className="text-white/70 text-xs">Hari ke-{image.hari}</p>
                   </div>
                 </div>
+                {/* Delete button on hover */}
+                <button
+                  className="absolute top-2 right-2 p-1.5 bg-red-500 hover:bg-red-600 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setDeleteConfirm(image);
+                  }}
+                  title="Hapus gambar"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </button>
               </div>
             ))}
           </div>
@@ -228,12 +299,74 @@ export default function GaleriPage() {
               <p className="text-gray-300">
                 Hari ke-{selectedImage.hari} • {formatTanggal(selectedImage.tanggal)}
               </p>
-              <Link
-                href={`/laporan?id=${selectedImage.laporanId}`}
-                className="inline-block mt-3 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm transition-colors"
-              >
-                Lihat Laporan →
-              </Link>
+              <div className="flex items-center justify-center gap-3 mt-3">
+                <Link
+                  href={`/laporan?id=${selectedImage.laporanId}`}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm transition-colors"
+                >
+                  Lihat Laporan →
+                </Link>
+                <button
+                  onClick={() => setDeleteConfirm(selectedImage)}
+                  className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-sm transition-colors flex items-center gap-2"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                  Hapus
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirm && (
+        <div 
+          className="fixed inset-0 bg-black/70 z-[60] flex items-center justify-center p-4"
+          onClick={() => !isDeleting && setDeleteConfirm(null)}
+        >
+          <div 
+            className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="text-center">
+              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Hapus Gambar?</h3>
+              <p className="text-gray-600 mb-6">
+                Apakah Anda yakin ingin menghapus gambar dari kegiatan <strong>{deleteConfirm.namaKegiatan}</strong> (Hari ke-{deleteConfirm.hari})? Tindakan ini tidak dapat dibatalkan.
+              </p>
+              <div className="flex gap-3 justify-center">
+                <button
+                  onClick={() => setDeleteConfirm(null)}
+                  disabled={isDeleting}
+                  className="px-6 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg font-medium transition-colors disabled:opacity-50"
+                >
+                  Batal
+                </button>
+                <button
+                  onClick={() => handleDeleteImage(deleteConfirm)}
+                  disabled={isDeleting}
+                  className="px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 flex items-center gap-2"
+                >
+                  {isDeleting ? (
+                    <>
+                      <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Menghapus...
+                    </>
+                  ) : (
+                    'Ya, Hapus'
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>
