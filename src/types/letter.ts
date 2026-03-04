@@ -9,7 +9,8 @@ export type LetterType =
   | 'undangan'      // Surat Undangan/Permohonan (Format Narasi)
   | 'surat_tugas'   // Surat Tugas/Perintah (Format Tabel Umum)
   | 'spk_lembur'    // SPK Lembur (Format Tabel Khusus)
-  | 'laporan_rbd';  // Permohonan Laporan RBD (Format Multi-halaman/Lampiran)
+  | 'laporan_rbd'   // Permohonan Laporan RBD (Format Multi-halaman/Lampiran)
+  | 'laporan_kegiatan';  // Laporan Kegiatan (Format sama dengan buat-laporan)
 
 export interface LetterTypeOption {
   value: LetterType;
@@ -42,6 +43,12 @@ export const LETTER_TYPE_OPTIONS: LetterTypeOption[] = [
     label: 'Permohonan Laporan RBD',
     description: 'Format multi-halaman dengan lampiran untuk laporan resmi.',
     icon: '📑'
+  },
+  {
+    value: 'laporan_kegiatan',
+    label: 'Laporan Kegiatan',
+    description: 'Format laporan kegiatan lengkap dengan pendahuluan, uraian, dan penutup.',
+    icon: '📝'
   }
 ];
 
@@ -191,13 +198,59 @@ export interface LaporanRBDData {
   tempatSurat: string;
 }
 
+// ==================== LAPORAN KEGIATAN ====================
+
+export interface PelaksanaKegiatan {
+  nama: string;
+  jabatan: string;
+  nip?: string;
+}
+
+export interface GambarDokumentasi {
+  url: string;
+  caption: string;
+}
+
+export interface LaporanKegiatanData {
+  type: 'laporan_kegiatan';
+  
+  // Informasi Kegiatan
+  namaKegiatan: string;
+  tanggal: string;
+  waktuMulai: string;
+  waktuSelesai: string;
+  lokasi: string;
+  
+  // Pendahuluan
+  pendahuluan: string; // Latar Belakang / Dasar Hukum / Tujuan (rich text)
+  sumberPendanaan: string;
+  
+  // Penanggung Jawab
+  pelaksana: PelaksanaKegiatan[];
+  
+  // Uraian Kegiatan
+  deskripsi: string; // Rich text
+  
+  // Dokumentasi
+  gambar?: GambarDokumentasi[];
+  
+  // Penutup
+  rekomendasi: string; // Rich text
+  ucapanTerimakasih: string; // Rich text
+  
+  // Metadata
+  tanggalSurat: string;
+  tempatSurat: string;
+}
+
 // ==================== UNION TYPE ====================
 
 export type LetterData = 
   | SuratUndanganData 
   | SuratTugasData 
   | SpkLemburData 
-  | LaporanRBDData;
+  | LaporanRBDData
+  | LaporanKegiatanData;
 
 // ==================== FORM STATE ====================
 
@@ -285,6 +338,25 @@ export function getDefaultLetterData(type: LetterType): Partial<LetterData> {
         tanggalSurat: today,
         tempatSurat: 'Bandung'
       } as Partial<LaporanRBDData>;
+      
+    case 'laporan_kegiatan':
+      return {
+        type: 'laporan_kegiatan',
+        namaKegiatan: '',
+        tanggal: today,
+        waktuMulai: '',
+        waktuSelesai: '',
+        lokasi: '',
+        pendahuluan: '',
+        sumberPendanaan: '',
+        pelaksana: [{ nama: '', jabatan: '', nip: '' }],
+        deskripsi: '',
+        gambar: [],
+        rekomendasi: '',
+        ucapanTerimakasih: '',
+        tanggalSurat: today,
+        tempatSurat: 'Bandung'
+      } as Partial<LaporanKegiatanData>;
       
     default:
       return {};

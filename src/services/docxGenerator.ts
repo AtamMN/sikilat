@@ -30,6 +30,7 @@ import {
   SuratTugasData,
   SpkLemburData,
   LaporanRBDData,
+  LaporanKegiatanData,
 } from '@/types/letter';
 
 // ==================== CONSTANTS ====================
@@ -700,6 +701,370 @@ const generateLaporanRBD = async (data: Partial<LaporanRBDData>): Promise<(Parag
   return elements;
 };
 
+// ==================== LAPORAN KEGIATAN GENERATOR ====================
+
+// Convert base64 to ArrayBuffer for images
+const base64ToArrayBuffer = (base64: string): ArrayBuffer => {
+  // Remove data URL prefix if present
+  const base64Data = base64.includes(',') ? base64.split(',')[1] : base64;
+  const binaryString = atob(base64Data);
+  const bytes = new Uint8Array(binaryString.length);
+  for (let i = 0; i < binaryString.length; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+  return bytes.buffer;
+};
+
+// Get image dimensions from base64 string
+const getImageDimensions = (base64: string): Promise<{ width: number; height: number }> => {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      resolve({ width: img.width, height: img.height });
+    };
+    img.onerror = () => {
+      // Default fallback dimensions
+      resolve({ width: 400, height: 300 });
+    };
+    img.src = base64;
+  });
+};
+
+// Calculate scaled dimensions maintaining aspect ratio
+const calculateScaledDimensions = (
+  originalWidth: number, 
+  originalHeight: number, 
+  maxWidth: number = 350, // ~9.3cm in docx units
+  maxHeight: number = 280  // ~7.4cm in docx units
+): { width: number; height: number } => {
+  const widthRatio = maxWidth / originalWidth;
+  const heightRatio = maxHeight / originalHeight;
+  const scale = Math.min(widthRatio, heightRatio, 1); // Don't scale up
+  
+  return {
+    width: Math.round(originalWidth * scale),
+    height: Math.round(originalHeight * scale),
+  };
+};
+
+// Format tanggal lengkap dengan hari
+const formatTanggalLengkap = (dateString: string): string => {
+  if (!dateString) return '_______________';
+  
+  const options: Intl.DateTimeFormatOptions = { 
+    weekday: 'long',
+    day: 'numeric', 
+    month: 'long', 
+    year: 'numeric' 
+  };
+  
+  try {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('id-ID', options);
+  } catch {
+    return dateString;
+  }
+};
+
+const generateLaporanKegiatan = async (data: Partial<LaporanKegiatanData>): Promise<(Paragraph | Table)[]> => {
+  const kopSurat = await createKopSurat();
+  
+  const elements: (Paragraph | Table)[] = [
+    ...kopSurat,
+    
+    // Title
+    new Paragraph({
+      children: [
+        new TextRun({ 
+          text: 'LAPORAN KEGIATAN', 
+          size: FONT_SIZE, 
+          font: FONT_NAME, 
+          bold: true 
+        }),
+      ],
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 100 },
+    }),
+    new Paragraph({
+      children: [
+        new TextRun({ 
+          text: (data.namaKegiatan || '_______________').toUpperCase(), 
+          size: FONT_SIZE, 
+          font: FONT_NAME, 
+          bold: true 
+        }),
+      ],
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 400 },
+    }),
+    
+    // BAB I: PENDAHULUAN
+    new Paragraph({
+      children: [
+        new TextRun({ text: 'BAB I. PENDAHULUAN', size: FONT_SIZE, font: FONT_NAME, bold: true }),
+      ],
+      spacing: { after: 200 },
+    }),
+    
+    // A. Latar Belakang
+    new Paragraph({
+      children: [
+        new TextRun({ text: 'A. Latar Belakang / Dasar Hukum / Tujuan', size: FONT_SIZE, font: FONT_NAME, bold: true }),
+      ],
+      spacing: { after: 100 },
+    }),
+    new Paragraph({
+      children: [
+        new TextRun({ text: data.pendahuluan || '_______________', size: FONT_SIZE, font: FONT_NAME }),
+      ],
+      indent: { left: convertMillimetersToTwip(10) },
+      spacing: { after: 200 },
+    }),
+    
+    // B. Waktu dan Tempat
+    new Paragraph({
+      children: [
+        new TextRun({ text: 'B. Waktu dan Tempat Pelaksanaan', size: FONT_SIZE, font: FONT_NAME, bold: true }),
+      ],
+      spacing: { after: 100 },
+    }),
+  ];
+  
+  // Waktu dan Tempat table-like layout
+  elements.push(
+    new Paragraph({
+      children: [
+        new TextRun({ text: `Hari/Tanggal\t: ${formatTanggalLengkap(data.tanggal || '')}`, size: FONT_SIZE, font: FONT_NAME }),
+      ],
+      indent: { left: convertMillimetersToTwip(10) },
+    }),
+    new Paragraph({
+      children: [
+        new TextRun({ text: `Waktu\t\t: ${data.waktuMulai || '___'} s.d. ${data.waktuSelesai || '___'}`, size: FONT_SIZE, font: FONT_NAME }),
+      ],
+      indent: { left: convertMillimetersToTwip(10) },
+    }),
+    new Paragraph({
+      children: [
+        new TextRun({ text: `Tempat\t\t: ${data.lokasi || '_______________'}`, size: FONT_SIZE, font: FONT_NAME }),
+      ],
+      indent: { left: convertMillimetersToTwip(10) },
+      spacing: { after: 200 },
+    }),
+  );
+  
+  // C. Pelaksana
+  elements.push(
+    new Paragraph({
+      children: [
+        new TextRun({ text: 'C. Pelaksana', size: FONT_SIZE, font: FONT_NAME, bold: true }),
+      ],
+      spacing: { after: 100 },
+    }),
+  );
+  
+  if (data.pelaksana && data.pelaksana.length > 0) {
+    data.pelaksana.forEach((p) => {
+      elements.push(
+        new Paragraph({
+          children: [
+            new TextRun({ 
+              text: `${p.nama || '___'} (${p.jabatan || '___'})${p.nip ? ` - NIP. ${p.nip}` : ''}`, 
+              size: FONT_SIZE, 
+              font: FONT_NAME 
+            }),
+          ],
+          indent: { left: convertMillimetersToTwip(10) },
+        }),
+      );
+    });
+  } else {
+    elements.push(
+      new Paragraph({
+        children: [
+          new TextRun({ text: '_______________ (_______________)', size: FONT_SIZE, font: FONT_NAME }),
+        ],
+        indent: { left: convertMillimetersToTwip(10) },
+      }),
+    );
+  }
+  
+  // D. Sumber Pendanaan
+  elements.push(
+    new Paragraph({
+      children: [
+        new TextRun({ text: 'D. Sumber Pendanaan', size: FONT_SIZE, font: FONT_NAME, bold: true }),
+      ],
+      spacing: { before: 200, after: 100 },
+    }),
+    new Paragraph({
+      children: [
+        new TextRun({ text: data.sumberPendanaan || '_______________', size: FONT_SIZE, font: FONT_NAME }),
+      ],
+      indent: { left: convertMillimetersToTwip(10) },
+      spacing: { after: 300 },
+    }),
+  );
+  
+  // BAB II: URAIAN KEGIATAN
+  elements.push(
+    new Paragraph({
+      children: [
+        new TextRun({ text: 'BAB II. URAIAN KEGIATAN', size: FONT_SIZE, font: FONT_NAME, bold: true }),
+      ],
+      spacing: { after: 200 },
+    }),
+    new Paragraph({
+      children: [
+        new TextRun({ text: data.deskripsi || 'Isi deskripsi/uraian kegiatan...', size: FONT_SIZE, font: FONT_NAME }),
+      ],
+      spacing: { after: 300 },
+    }),
+  );
+  
+  // DOKUMENTASI KEGIATAN (if images exist)
+  if (data.gambar && data.gambar.length > 0) {
+    elements.push(
+      new Paragraph({
+        children: [
+          new TextRun({ text: 'DOKUMENTASI KEGIATAN', size: FONT_SIZE, font: FONT_NAME, bold: true }),
+        ],
+        spacing: { after: 200 },
+      }),
+    );
+    
+    // Add images with captions - maintain original aspect ratio
+    for (let i = 0; i < data.gambar.length; i++) {
+      const img = data.gambar[i];
+      try {
+        const imgBuffer = base64ToArrayBuffer(img.url);
+        
+        // Get actual image dimensions and scale proportionally
+        const originalDims = await getImageDimensions(img.url);
+        const scaledDims = calculateScaledDimensions(originalDims.width, originalDims.height);
+        
+        elements.push(
+          new Paragraph({
+            children: [
+              new ImageRun({
+                data: imgBuffer,
+                transformation: {
+                  width: scaledDims.width,
+                  height: scaledDims.height,
+                },
+                type: 'png',
+              }),
+            ],
+            alignment: AlignmentType.CENTER,
+          }),
+          new Paragraph({
+            children: [
+              new TextRun({ text: img.caption || `Foto ${i + 1}`, size: 20, font: FONT_NAME, italics: true }),
+            ],
+            alignment: AlignmentType.CENTER,
+            spacing: { after: 200 },
+          }),
+        );
+      } catch (err) {
+        console.error('Failed to add image:', err);
+      }
+    }
+    
+    elements.push(
+      new Paragraph({ spacing: { after: 200 } }),
+    );
+  }
+  
+  // BAB III: PENUTUP
+  elements.push(
+    new Paragraph({
+      children: [
+        new TextRun({ text: 'BAB III. PENUTUP', size: FONT_SIZE, font: FONT_NAME, bold: true }),
+      ],
+      spacing: { after: 200 },
+    }),
+    
+    // A. Rekomendasi
+    new Paragraph({
+      children: [
+        new TextRun({ text: 'A. Rekomendasi', size: FONT_SIZE, font: FONT_NAME, bold: true }),
+      ],
+      spacing: { after: 100 },
+    }),
+    new Paragraph({
+      children: [
+        new TextRun({ text: data.rekomendasi || 'Isi rekomendasi...', size: FONT_SIZE, font: FONT_NAME }),
+      ],
+      indent: { left: convertMillimetersToTwip(10) },
+      spacing: { after: 200 },
+    }),
+    
+    // B. Ucapan Terima Kasih
+    new Paragraph({
+      children: [
+        new TextRun({ text: 'B. Ucapan Terima Kasih', size: FONT_SIZE, font: FONT_NAME, bold: true }),
+      ],
+      spacing: { after: 100 },
+    }),
+    new Paragraph({
+      children: [
+        new TextRun({ text: data.ucapanTerimakasih || 'Isi ucapan terima kasih...', size: FONT_SIZE, font: FONT_NAME }),
+      ],
+      indent: { left: convertMillimetersToTwip(10) },
+      spacing: { after: 400 },
+    }),
+  );
+  
+  // Signature
+  const pelaksanaNama = data.pelaksana?.[0]?.nama || '_________________';
+  const pelaksanaNip = data.pelaksana?.[0]?.nip;
+  
+  elements.push(
+    new Paragraph({
+      children: [
+        new TextRun({ 
+          text: `${data.tempatSurat || 'Bandung'}, ${formatTanggal(data.tanggalSurat || '')}`, 
+          size: FONT_SIZE, 
+          font: FONT_NAME 
+        }),
+      ],
+      alignment: AlignmentType.RIGHT,
+      indent: { left: convertMillimetersToTwip(80) },
+    }),
+    new Paragraph({
+      children: [
+        new TextRun({ text: 'Pelaksana,', size: FONT_SIZE, font: FONT_NAME }),
+      ],
+      alignment: AlignmentType.RIGHT,
+      indent: { left: convertMillimetersToTwip(80) },
+    }),
+    new Paragraph({
+      spacing: { before: 600, after: 600 },
+    }),
+    new Paragraph({
+      children: [
+        new TextRun({ text: pelaksanaNama, size: FONT_SIZE, font: FONT_NAME, bold: true }),
+      ],
+      alignment: AlignmentType.RIGHT,
+      indent: { left: convertMillimetersToTwip(80) },
+    }),
+  );
+  
+  if (pelaksanaNip) {
+    elements.push(
+      new Paragraph({
+        children: [
+          new TextRun({ text: `NIP. ${pelaksanaNip}`, size: FONT_SIZE, font: FONT_NAME }),
+        ],
+        alignment: AlignmentType.RIGHT,
+        indent: { left: convertMillimetersToTwip(80) },
+      }),
+    );
+  }
+  
+  return elements;
+};
+
 // ==================== MAIN EXPORT FUNCTION ====================
 
 export async function generateDocx(
@@ -721,6 +1086,9 @@ export async function generateDocx(
       break;
     case 'laporan_rbd':
       children = await generateLaporanRBD(data as Partial<LaporanRBDData>);
+      break;
+    case 'laporan_kegiatan':
+      children = await generateLaporanKegiatan(data as Partial<LaporanKegiatanData>);
       break;
     default:
       throw new Error(`Unknown letter type: ${letterType}`);

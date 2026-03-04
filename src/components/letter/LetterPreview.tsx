@@ -12,7 +12,8 @@ import {
   SuratUndanganData,
   SuratTugasData,
   SpkLemburData,
-  LaporanRBDData
+  LaporanRBDData,
+  LaporanKegiatanData
 } from '@/types/letter';
 
 // ==================== HELPER FUNCTIONS ====================
@@ -388,6 +389,165 @@ const LaporanRBDPreview: React.FC<LaporanRBDPreviewProps> = ({ data }) => {
   );
 };
 
+// ==================== LAPORAN KEGIATAN PREVIEW ====================
+
+interface LaporanKegiatanPreviewProps {
+  data: Partial<LaporanKegiatanData>;
+}
+
+const formatTanggalLengkap = (dateString: string): string => {
+  if (!dateString) return '_______________';
+  
+  const options: Intl.DateTimeFormatOptions = { 
+    weekday: 'long',
+    day: 'numeric', 
+    month: 'long', 
+    year: 'numeric' 
+  };
+  
+  try {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('id-ID', options);
+  } catch {
+    return dateString;
+  }
+};
+
+const LaporanKegiatanPreview: React.FC<LaporanKegiatanPreviewProps> = ({ data }) => {
+  return (
+    <div className="text-[11pt] leading-relaxed">
+      <KopSurat />
+      
+      {/* Judul Laporan */}
+      <div className="text-center mb-6">
+        <h2 className="text-base font-bold uppercase tracking-wide">LAPORAN KEGIATAN</h2>
+        <h3 className="text-sm font-semibold mt-1 uppercase">
+          {data.namaKegiatan || '_______________'}
+        </h3>
+      </div>
+      
+      {/* BAB I: PENDAHULUAN */}
+      <section className="mb-6">
+        <h3 className="text-sm font-bold mb-3">BAB I. PENDAHULUAN</h3>
+        
+        <div className="space-y-3 text-justify">
+          <div>
+            <h4 className="font-semibold text-[11pt] mb-1">A. Latar Belakang / Dasar Hukum / Tujuan</h4>
+            <div className="pl-4 whitespace-pre-wrap">
+              {data.pendahuluan || 'Isi latar belakang, dasar hukum, dan tujuan kegiatan...'}
+            </div>
+          </div>
+          
+          <div>
+            <h4 className="font-semibold text-[11pt] mb-1">B. Waktu dan Tempat Pelaksanaan</h4>
+            <div className="pl-4">
+              <table className="text-[11pt]">
+                <tbody>
+                  <tr>
+                    <td className="pr-3">Hari/Tanggal</td>
+                    <td className="pr-2">:</td>
+                    <td>{formatTanggalLengkap(data.tanggal || '')}</td>
+                  </tr>
+                  <tr>
+                    <td className="pr-3">Waktu</td>
+                    <td className="pr-2">:</td>
+                    <td>{data.waktuMulai || '___'} s.d. {data.waktuSelesai || '___'}</td>
+                  </tr>
+                  <tr>
+                    <td className="pr-3">Tempat</td>
+                    <td className="pr-2">:</td>
+                    <td>{data.lokasi || '_______________'}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          
+          <div>
+            <h4 className="font-semibold text-[11pt] mb-1">C. Pelaksana</h4>
+            <div className="pl-4 text-[11pt]">
+              {(data.pelaksana || []).map((p, i) => (
+                <p key={i} className="leading-snug">
+                  {p.nama || '___'} ({p.jabatan || '___'})
+                  {p.nip && ` - NIP. ${p.nip}`}
+                </p>
+              ))}
+              {(!data.pelaksana || data.pelaksana.length === 0) && (
+                <p className="leading-snug">_______________ (_______________)</p>
+              )}
+            </div>
+          </div>
+          
+          <div>
+            <h4 className="font-semibold text-[11pt] mb-1">D. Sumber Pendanaan</h4>
+            <p className="pl-4 text-[11pt]">{data.sumberPendanaan || '_______________'}</p>
+          </div>
+        </div>
+      </section>
+      
+      {/* BAB II: URAIAN KEGIATAN */}
+      <section className="mb-6">
+        <h3 className="text-sm font-bold mb-3">BAB II. URAIAN KEGIATAN</h3>
+        <div className="text-justify whitespace-pre-wrap">
+          {data.deskripsi || 'Isi deskripsi/uraian kegiatan...'}
+        </div>
+      </section>
+      
+      {/* Dokumentasi Kegiatan */}
+      {data.gambar && data.gambar.length > 0 && (
+        <section className="mb-6">
+          <h3 className="text-sm font-bold mb-3">DOKUMENTASI KEGIATAN</h3>
+          <div className="grid grid-cols-2 gap-3">
+            {data.gambar.map((img, index) => (
+              <div key={index} className="border border-gray-300 rounded overflow-hidden">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img 
+                  src={img.url} 
+                  alt={img.caption || `Dokumentasi ${index + 1}`}
+                  className="w-full h-auto block"
+                />
+                <p className="text-xs text-center py-1 bg-gray-50">{img.caption || `Foto ${index + 1}`}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+      
+      {/* BAB III: PENUTUP */}
+      <section className="mb-6">
+        <h3 className="text-sm font-bold mb-3">BAB III. PENUTUP</h3>
+        
+        <div className="space-y-3 text-justify">
+          <div>
+            <h4 className="font-semibold text-[11pt] mb-1">A. Rekomendasi</h4>
+            <div className="pl-4 whitespace-pre-wrap">
+              {data.rekomendasi || 'Isi rekomendasi...'}
+            </div>
+          </div>
+          
+          <div>
+            <h4 className="font-semibold text-[11pt] mb-1">B. Ucapan Terima Kasih</h4>
+            <div className="pl-4 whitespace-pre-wrap">
+              {data.ucapanTerimakasih || 'Isi ucapan terima kasih...'}
+            </div>
+          </div>
+        </div>
+      </section>
+      
+      {/* Tanda Tangan */}
+      <div className="flex justify-end mt-8">
+        <div className="text-center">
+          <p>{data.tempatSurat || 'Bandung'}, {formatTanggal(data.tanggalSurat || '')}</p>
+          <p className="mt-1">Pelaksana,</p>
+          <div className="h-20"></div>
+          <p className="font-semibold">{data.pelaksana?.[0]?.nama || '_________________'}</p>
+          {data.pelaksana?.[0]?.nip && <p>NIP. {data.pelaksana[0].nip}</p>}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ==================== MAIN PREVIEW COMPONENT ====================
 
 interface LetterPreviewProps {
@@ -451,6 +611,9 @@ export const LetterPreview: React.FC<LetterPreviewProps> = ({
         {selectedType === 'laporan_rbd' && (
           <LaporanRBDPreview data={data as Partial<LaporanRBDData>} />
         )}
+        {selectedType === 'laporan_kegiatan' && (
+          <LaporanKegiatanPreview data={data as Partial<LaporanKegiatanData>} />
+        )}
       </div>
     );
   }
@@ -480,6 +643,9 @@ export const LetterPreview: React.FC<LetterPreviewProps> = ({
           )}
           {selectedType === 'laporan_rbd' && (
             <LaporanRBDPreview data={data as Partial<LaporanRBDData>} />
+          )}
+          {selectedType === 'laporan_kegiatan' && (
+            <LaporanKegiatanPreview data={data as Partial<LaporanKegiatanData>} />
           )}
         </div>
       </div>

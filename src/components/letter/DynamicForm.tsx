@@ -5,7 +5,7 @@
 
 'use client';
 
-import React from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { 
   LetterType, 
   LetterData, 
@@ -13,9 +13,13 @@ import {
   SuratTugasData, 
   SpkLemburData,
   LaporanRBDData,
+  LaporanKegiatanData,
   Pegawai,
-  PegawaiLembur
+  PegawaiLembur,
+  PelaksanaKegiatan,
+  GambarDokumentasi
 } from '@/types/letter';
+import { validateImageFile } from '@/services/imageService';
 
 interface DynamicFormProps {
   selectedType: LetterType;
@@ -69,6 +73,183 @@ const InputField: React.FC<InputFieldProps> = ({
           className={baseClasses}
         />
       )}
+    </div>
+  );
+};
+
+// ==================== IMAGE UPLOAD WITH CAPTION ====================
+
+interface ImageUploadWithCaptionProps {
+  images: GambarDokumentasi[];
+  onChange: (images: GambarDokumentasi[]) => void;
+  maxImages?: number;
+}
+
+const ImageUploadWithCaption: React.FC<ImageUploadWithCaptionProps> = ({
+  images,
+  onChange,
+  maxImages = 5,
+}) => {
+  const [isDragging, setIsDragging] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileSelect = useCallback(async (files: FileList | null) => {
+    if (!files) return;
+    
+    setError(null);
+    const remainingSlots = maxImages - images.length;
+
+    if (files.length > remainingSlots) {
+      setError(`Maksimal ${maxImages} gambar. Sisa slot: ${remainingSlots}`);
+    }
+
+    const filesToProcess = Array.from(files).slice(0, remainingSlots);
+    const newImages: GambarDokumentasi[] = [];
+
+    for (const file of filesToProcess) {
+      const validation = validateImageFile(file);
+      if (!validation.success) {
+        setError(validation.message || 'File tidak valid');
+        continue;
+      }
+
+      const reader = new FileReader();
+      const base64Promise = new Promise<string>((resolve) => {
+        reader.onloadend = () => {
+          resolve(reader.result as string);
+        };
+        reader.readAsDataURL(file);
+      });
+
+      const base64 = await base64Promise;
+      newImages.push({
+        url: base64,
+        caption: `Dokumentasi ${images.length + newImages.length + 1}`,
+      });
+    }
+
+    onChange([...images, ...newImages]);
+  }, [images, maxImages, onChange]);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    handleFileSelect(e.dataTransfer.files);
+  }, [handleFileSelect]);
+
+  const handleRemove = (index: number) => {
+    const newImages = images.filter((_, i) => i !== index);
+    onChange(newImages);
+  };
+
+  const handleCaptionChange = (index: number, caption: string) => {
+    const newImages = [...images];
+    newImages[index] = { ...newImages[index], caption };
+    onChange(newImages);
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Upload Area */}
+      {images.length < maxImages && (
+        <div
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          onClick={() => fileInputRef.current?.click()}
+          className={`
+            border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors
+            ${isDragging 
+              ? 'border-indigo-500 bg-indigo-50' 
+              : 'border-gray-300 hover:border-indigo-400 hover:bg-gray-50'
+            }
+          `}
+        >
+          <svg className="w-10 h-10 mx-auto text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+          <p className="text-sm text-gray-600">
+            <span className="text-indigo-600 font-medium">Klik untuk upload</span> atau drag & drop
+          </p>
+          <p className="text-xs text-gray-500 mt-1">PNG, JPG, JPEG (max 5MB)</p>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            onChange={(e) => handleFileSelect(e.target.files)}
+            className="hidden"
+          />
+        </div>
+      )}
+
+      {/* Error Message */}
+      {error && (
+        <p className="text-sm text-red-600 flex items-center gap-1">
+          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+          </svg>
+          {error}
+        </p>
+      )}
+
+      {/* Image Previews with Captions */}
+      {images.length > 0 && (
+        <div className="space-y-4">
+          {images.map((img, index) => (
+            <div key={index} className="border border-gray-200 rounded-xl overflow-hidden bg-white">
+              <div className="relative">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={img.url}
+                  alt={img.caption}
+                  className="w-full h-auto block"
+                />
+                <button
+                  type="button"
+                  onClick={() => handleRemove(index)}
+                  className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors shadow-lg"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+                <div className="absolute bottom-2 left-2 px-2 py-1 bg-black/60 text-white text-xs rounded">
+                  Foto {index + 1}
+                </div>
+              </div>
+              <div className="p-3">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Keterangan Foto
+                </label>
+                <input
+                  type="text"
+                  value={img.caption}
+                  onChange={(e) => handleCaptionChange(index, e.target.value)}
+                  placeholder="Masukkan keterangan foto..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors text-sm"
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Counter */}
+      <p className="text-xs text-gray-500 text-right">
+        {images.length} / {maxImages} foto
+      </p>
     </div>
   );
 };
@@ -834,6 +1015,245 @@ const LaporanRBDForm: React.FC<LaporanRBDFormProps> = ({ data, onChange }) => {
   );
 };
 
+// ==================== LAPORAN KEGIATAN FORM ====================
+
+interface LaporanKegiatanFormProps {
+  data: Partial<LaporanKegiatanData>;
+  onChange: (data: Partial<LaporanKegiatanData>) => void;
+}
+
+const LaporanKegiatanForm: React.FC<LaporanKegiatanFormProps> = ({ data, onChange }) => {
+  const updateField = <K extends keyof LaporanKegiatanData>(
+    field: K, 
+    value: LaporanKegiatanData[K]
+  ) => {
+    onChange({ ...data, [field]: value });
+  };
+  
+  const updatePelaksana = (index: number, field: keyof PelaksanaKegiatan, value: string) => {
+    const newPelaksana = [...(data.pelaksana || [{ nama: '', jabatan: '', nip: '' }])];
+    newPelaksana[index] = { ...newPelaksana[index], [field]: value };
+    updateField('pelaksana', newPelaksana);
+  };
+  
+  const addPelaksana = () => {
+    const newPelaksana = [...(data.pelaksana || []), { nama: '', jabatan: '', nip: '' }];
+    updateField('pelaksana', newPelaksana);
+  };
+  
+  const removePelaksana = (index: number) => {
+    const newPelaksana = (data.pelaksana || []).filter((_, i) => i !== index);
+    updateField('pelaksana', newPelaksana.length > 0 ? newPelaksana : [{ nama: '', jabatan: '', nip: '' }]);
+  };
+  
+  return (
+    <div className="space-y-6">
+      {/* Section 1: Informasi Kegiatan */}
+      <div className="bg-gray-50 p-4 rounded-xl">
+        <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+          <span className="w-6 h-6 bg-indigo-600 text-white rounded-full flex items-center justify-center text-sm">1</span>
+          Informasi Kegiatan
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="md:col-span-2">
+            <InputField
+              label="Nama Kegiatan"
+              value={data.namaKegiatan || ''}
+              onChange={(v) => updateField('namaKegiatan', v)}
+              placeholder="Contoh: Workshop Penulisan Ilmiah"
+              required
+            />
+          </div>
+          <InputField
+            label="Tanggal Pelaksanaan"
+            value={data.tanggal || ''}
+            onChange={(v) => updateField('tanggal', v)}
+            type="date"
+            required
+          />
+          <InputField
+            label="Lokasi/Tempat"
+            value={data.lokasi || ''}
+            onChange={(v) => updateField('lokasi', v)}
+            placeholder="Contoh: Aula Balai Bahasa Jawa Barat"
+            required
+          />
+          <InputField
+            label="Waktu Mulai"
+            value={data.waktuMulai || ''}
+            onChange={(v) => updateField('waktuMulai', v)}
+            placeholder="Contoh: 08:00 WIB"
+            required
+          />
+          <InputField
+            label="Waktu Selesai"
+            value={data.waktuSelesai || ''}
+            onChange={(v) => updateField('waktuSelesai', v)}
+            placeholder="Contoh: 16:00 WIB"
+            required
+          />
+        </div>
+      </div>
+      
+      {/* Section 2: Pendahuluan */}
+      <div className="bg-gray-50 p-4 rounded-xl">
+        <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+          <span className="w-6 h-6 bg-indigo-600 text-white rounded-full flex items-center justify-center text-sm">2</span>
+          Pendahuluan
+        </h3>
+        <div className="space-y-4">
+          <InputField
+            label="Latar Belakang / Dasar Hukum / Tujuan"
+            value={data.pendahuluan || ''}
+            onChange={(v) => updateField('pendahuluan', v)}
+            type="textarea"
+            placeholder="Tuliskan latar belakang kegiatan, dasar hukum pelaksanaan (SK, Peraturan), serta tujuan kegiatan..."
+            rows={6}
+            required
+          />
+          <InputField
+            label="Sumber Pendanaan"
+            value={data.sumberPendanaan || ''}
+            onChange={(v) => updateField('sumberPendanaan', v)}
+            placeholder="Contoh: DIPA Balai Bahasa Provinsi Jawa Barat Tahun 2026"
+            required
+          />
+        </div>
+      </div>
+      
+      {/* Section 3: Penanggung Jawab */}
+      <div className="bg-gray-50 p-4 rounded-xl">
+        <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+          <span className="w-6 h-6 bg-indigo-600 text-white rounded-full flex items-center justify-center text-sm">3</span>
+          Penanggung Jawab / Pelaksana
+        </h3>
+        <div className="space-y-4">
+          {(data.pelaksana || [{ nama: '', jabatan: '', nip: '' }]).map((pelaksana, index) => (
+            <div key={index} className="p-4 border border-gray-200 rounded-xl bg-white">
+              <div className="flex justify-between items-center mb-3">
+                <span className="text-sm font-medium text-gray-600">Pelaksana #{index + 1}</span>
+                {index > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => removePelaksana(index)}
+                    className="text-red-500 hover:text-red-700 text-sm"
+                  >
+                    Hapus
+                  </button>
+                )}
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <InputField
+                  label="Nama"
+                  value={pelaksana.nama || ''}
+                  onChange={(v) => updatePelaksana(index, 'nama', v)}
+                  placeholder="Contoh: Dr. Ahmad Sudrajat, M.Pd."
+                  required
+                />
+                <InputField
+                  label="Jabatan"
+                  value={pelaksana.jabatan || ''}
+                  onChange={(v) => updatePelaksana(index, 'jabatan', v)}
+                  placeholder="Contoh: Kepala Seksi Pengembangan"
+                  required
+                />
+                <InputField
+                  label="NIP (opsional)"
+                  value={pelaksana.nip || ''}
+                  onChange={(v) => updatePelaksana(index, 'nip', v)}
+                  placeholder="Contoh: 197501152001121001"
+                />
+              </div>
+            </div>
+          ))}
+          <button
+            type="button"
+            onClick={addPelaksana}
+            className="w-full py-2 border-2 border-dashed border-gray-300 rounded-xl text-gray-600 hover:border-indigo-400 hover:text-indigo-600 transition-colors"
+          >
+            + Tambah Pelaksana
+          </button>
+        </div>
+      </div>
+      
+      {/* Section 4: Uraian Kegiatan */}
+      <div className="bg-gray-50 p-4 rounded-xl">
+        <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+          <span className="w-6 h-6 bg-indigo-600 text-white rounded-full flex items-center justify-center text-sm">4</span>
+          Uraian Kegiatan
+        </h3>
+        <InputField
+          label="Deskripsi Kegiatan"
+          value={data.deskripsi || ''}
+          onChange={(v) => updateField('deskripsi', v)}
+          type="textarea"
+          placeholder="Jelaskan proses pelaksanaan kegiatan secara detail..."
+          rows={8}
+          required
+        />
+      </div>
+      
+      {/* Section 5: Dokumentasi */}
+      <div className="bg-gray-50 p-4 rounded-xl">
+        <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+          <span className="w-6 h-6 bg-indigo-600 text-white rounded-full flex items-center justify-center text-sm">5</span>
+          Dokumentasi Kegiatan
+        </h3>
+        <p className="text-sm text-gray-600 mb-4">
+          Upload foto dokumentasi kegiatan (maksimal 5 foto)
+        </p>
+        <ImageUploadWithCaption
+          images={data.gambar || []}
+          onChange={(images) => updateField('gambar', images)}
+          maxImages={5}
+        />
+      </div>
+      
+      {/* Section 6: Penutup */}
+      <div className="bg-gray-50 p-4 rounded-xl">
+        <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+          <span className="w-6 h-6 bg-indigo-600 text-white rounded-full flex items-center justify-center text-sm">6</span>
+          Penutup
+        </h3>
+        <div className="space-y-4">
+          <InputField
+            label="Rekomendasi"
+            value={data.rekomendasi || ''}
+            onChange={(v) => updateField('rekomendasi', v)}
+            type="textarea"
+            placeholder="Tuliskan rekomendasi untuk Balai Bahasa Provinsi Jawa Barat/Badan Pengembangan dan Pembinaan Bahasa..."
+            rows={5}
+            required
+          />
+          <InputField
+            label="Ucapan Terima Kasih"
+            value={data.ucapanTerimakasih || ''}
+            onChange={(v) => updateField('ucapanTerimakasih', v)}
+            type="textarea"
+            placeholder="Tuliskan ucapan terima kasih kepada pihak-pihak terkait..."
+            rows={4}
+            required
+          />
+        </div>
+      </div>
+      
+      {/* Info */}
+      <div className="bg-indigo-100 p-4 rounded-xl border border-indigo-300">
+        <div className="flex items-start gap-3">
+          <span className="text-2xl">📝</span>
+          <div>
+            <h4 className="font-medium text-indigo-900">Format Laporan Kegiatan</h4>
+            <p className="text-sm text-indigo-700 mt-1">
+              Laporan ini akan di-generate dengan format resmi yang mencakup pendahuluan, 
+              uraian kegiatan, dokumentasi foto, dan penutup lengkap dengan rekomendasi.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ==================== MAIN COMPONENT ====================
 
 export const DynamicForm: React.FC<DynamicFormProps> = ({
@@ -868,6 +1288,13 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
         <LaporanRBDForm 
           data={data as Partial<LaporanRBDData>} 
           onChange={onChange as (d: Partial<LaporanRBDData>) => void}
+        />
+      );
+    case 'laporan_kegiatan':
+      return (
+        <LaporanKegiatanForm 
+          data={data as Partial<LaporanKegiatanData>} 
+          onChange={onChange as (d: Partial<LaporanKegiatanData>) => void}
         />
       );
     default:
