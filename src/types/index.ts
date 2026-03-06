@@ -6,3 +6,4 @@
  */
 
 export * from './laporan';
+export * from './letter';

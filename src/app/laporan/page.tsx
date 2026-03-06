@@ -15,43 +15,10 @@ import { getLaporanById } from '@/services/laporanService';
 import { LaporanType, UraianHari } from '@/types/laporan';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { resolveImageUrl, isRealtimeDbImage } from '@/lib/realtimeDbImages';
+import { formatTanggalLengkap, formatTanggal as formatTanggalSingkat } from '@/utils/dateFormat';
 
-// Helper untuk format tanggal
-const formatTanggal = (dateString: string): string => {
-  if (!dateString) return '-';
-  
-  const options: Intl.DateTimeFormatOptions = { 
-    weekday: 'long', 
-    year: 'numeric', 
-    month: 'long', 
-    day: 'numeric' 
-  };
-  
-  try {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('id-ID', options);
-  } catch {
-    return dateString;
-  }
-};
-
-// Helper untuk format tanggal singkat
-const formatTanggalSingkat = (dateString: string): string => {
-  if (!dateString) return '-';
-  
-  const options: Intl.DateTimeFormatOptions = { 
-    day: 'numeric', 
-    month: 'long', 
-    year: 'numeric' 
-  };
-  
-  try {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('id-ID', options);
-  } catch {
-    return dateString;
-  }
-};
+// Alias untuk backward compatibility
+const formatTanggal = formatTanggalLengkap;
 
 // Props untuk konten laporan
 interface LaporanContentProps {

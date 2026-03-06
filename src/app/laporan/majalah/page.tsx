@@ -14,24 +14,7 @@ import { getLaporanById } from '@/services/laporanService';
 import { LaporanType } from '@/types/laporan';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { resolveImageUrl, isRealtimeDbImage } from '@/lib/realtimeDbImages';
-
-// Helper untuk format tanggal
-const formatTanggal = (dateString: string): string => {
-  if (!dateString) return '-';
-  
-  const options: Intl.DateTimeFormatOptions = { 
-    day: 'numeric', 
-    month: 'long', 
-    year: 'numeric' 
-  };
-  
-  try {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('id-ID', options);
-  } catch {
-    return dateString;
-  }
-};
+import { formatTanggal } from '@/utils/dateFormat';
 
 // Helper untuk format bulan tahun
 const formatBulanTahun = (dateString: string): string => {

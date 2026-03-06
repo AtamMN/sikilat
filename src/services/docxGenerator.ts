@@ -32,6 +32,10 @@ import {
   LaporanRBDData,
   LaporanKegiatanData,
 } from '@/types/letter';
+import { 
+  formatTanggal as formatTanggalDefault, 
+  formatHari as formatHariDefault 
+} from '@/utils/dateFormat';
 
 // ==================== CONSTANTS ====================
 
@@ -49,33 +53,12 @@ const FONT_SIZE = 24; // 12pt in half-points
 
 // ==================== HELPER FUNCTIONS ====================
 
-const formatTanggal = (dateString: string): string => {
-  if (!dateString) return '_______________';
-  
-  const options: Intl.DateTimeFormatOptions = { 
-    day: 'numeric', 
-    month: 'long', 
-    year: 'numeric' 
-  };
-  
-  try {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('id-ID', options);
-  } catch {
-    return dateString;
-  }
-};
+// Wrapper functions with custom fallback for document context
+const formatTanggal = (dateString: string): string => 
+  formatTanggalDefault(dateString, '_______________');
 
-const formatHari = (dateString: string): string => {
-  if (!dateString) return '________';
-  
-  try {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('id-ID', { weekday: 'long' });
-  } catch {
-    return dateString;
-  }
-};
+const formatHari = (dateString: string): string => 
+  formatHariDefault(dateString, '________');
 
 // Fetch KOP image as ArrayBuffer
 const fetchKopImage = async (): Promise<ArrayBuffer | null> => {

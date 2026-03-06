@@ -12,6 +12,7 @@ import Link from 'next/link';
 import { getAllLaporan, getLaporanById, updateLaporan } from '@/services/laporanService';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { isRealtimeDbImage, resolveImageUrl } from '@/lib/realtimeDbImages';
+import { formatTanggal } from '@/utils/dateFormat';
 
 interface GalleryImage {
   src: string;
@@ -93,16 +94,6 @@ export default function GaleriPage() {
   const filteredImages = filter === 'all' 
     ? images 
     : images.filter(img => img.namaKegiatan === filter);
-
-  const formatTanggal = (dateString: string): string => {
-    if (!dateString) return '-';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('id-ID', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    });
-  };
 
   // Delete image from laporan
   const handleDeleteImage = async (image: GalleryImage) => {

@@ -200,11 +200,10 @@ export interface LaporanRBDData {
 
 // ==================== LAPORAN KEGIATAN ====================
 
-export interface PelaksanaKegiatan {
-  nama: string;
-  jabatan: string;
-  nip?: string;
-}
+import { Pelaksana } from './laporan';
+
+// PelaksanaKegiatan is alias for shared Pelaksana type
+export type PelaksanaKegiatan = Pelaksana;
 
 export interface GambarDokumentasi {
   url: string;

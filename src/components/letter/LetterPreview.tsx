@@ -15,36 +15,19 @@ import {
   LaporanRBDData,
   LaporanKegiatanData
 } from '@/types/letter';
+import { 
+  formatTanggal as formatTanggalDefault, 
+  formatHari as formatHariDefault 
+} from '@/utils/dateFormat';
 
 // ==================== HELPER FUNCTIONS ====================
 
-const formatTanggal = (dateString: string): string => {
-  if (!dateString) return '_______________';
-  
-  const options: Intl.DateTimeFormatOptions = { 
-    day: 'numeric', 
-    month: 'long', 
-    year: 'numeric' 
-  };
-  
-  try {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('id-ID', options);
-  } catch {
-    return dateString;
-  }
-};
+// Wrapper functions with custom fallback for letter context
+const formatTanggal = (dateString: string): string => 
+  formatTanggalDefault(dateString, '_______________');
 
-const formatHari = (dateString: string): string => {
-  if (!dateString) return '________';
-  
-  try {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('id-ID', { weekday: 'long' });
-  } catch {
-    return dateString;
-  }
-};
+const formatHari = (dateString: string): string => 
+  formatHariDefault(dateString, '________');
 
 // ==================== KOP SURAT COMPONENT ====================
 // KOP full image - /assets/kop-sikilat.png (1661x239 px, ratio 6.95:1)
